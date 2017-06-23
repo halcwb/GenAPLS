@@ -1,0 +1,8 @@
+# Ignore all files and use an opt-in strategy
+*
+
+# Dont ignore me
+!.gitignore
+
+# Add readme
+!README.md
