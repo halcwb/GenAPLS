@@ -7,8 +7,10 @@
 # Add readme
 !README.md
 
+
 # Add elm files
 !*.elm
+!elm-package.json
 
 # Add source files
 !src/
