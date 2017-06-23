@@ -6,3 +6,9 @@
 
 # Add readme
 !README.md
+
+# Add elm files
+!*.elm
+
+# Add source files
+!src/
