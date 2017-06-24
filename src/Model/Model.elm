@@ -9,7 +9,7 @@ import Util.Float exposing (roundBy)
 
 
 no_age =
-    -1
+    -0.5
 
 
 zero_age =
@@ -215,25 +215,47 @@ locale2 =
     Locale 2 "." ","
 
 
+printAge : Model -> String
+printAge model =
+    if model.age == no_age then
+        ""
+    else
+        format locale1 model.age ++ " jaar"
+
+
+printWeight : Model -> String
+printWeight model =
+    if model.weight == 0 then
+        ""
+    else
+        format locale1 model.weight ++ " kg"
+
+
 printTubeSize : Model -> String
 printTubeSize model =
-    let
-        print n =
-            format locale1 n
+    if model.tubeSize == ( 0, 0, 0 ) then
+        ""
+    else
+        let
+            print n =
+                format locale1 n
 
-        ( r, c, l ) =
-            model.tubeSize
-    in
-        (r |> print)
-            ++ " - "
-            ++ (c |> print)
-            ++ " - "
-            ++ (l |> print)
+            ( r, c, l ) =
+                model.tubeSize
+        in
+            (r |> print)
+                ++ " - "
+                ++ (c |> print)
+                ++ " - "
+                ++ (l |> print)
 
 
 printTubeLength : Float -> String
 printTubeLength n =
-    format locale1 n ++ " cm"
+    if n == 0 then
+        ""
+    else
+        format locale1 n ++ " cm"
 
 
 printTubeLengthOral : Model -> String
@@ -248,13 +270,16 @@ printTubeLengthNasal model =
 
 printEpinephrine : ( Float, Float, Float ) -> String -> String
 printEpinephrine e r =
-    let
-        ( d, s1, s2 ) =
-            e
-    in
-        (format locale2 d ++ " mg" ++ " " ++ r ++ " = ")
-            ++ (format locale2 s1 ++ " ml van 0,1 mg/ml = 1:10.0000 oplossing of ")
-            ++ (format locale2 s2 ++ " ml van 1 mg/ml = 1:10000 oplossing")
+    if e == ( 0, 0, 0 ) then
+        ""
+    else
+        let
+            ( d, s1, s2 ) =
+                e
+        in
+            (format locale2 d ++ " mg" ++ " " ++ r ++ " = ")
+                ++ (format locale2 s1 ++ " ml van 0,1 mg/ml = 1:10.0000 oplossing of ")
+                ++ (format locale2 s2 ++ " ml van 1 mg/ml = 1:10000 oplossing")
 
 
 printEpinephrineIV : Model -> String
@@ -269,14 +294,23 @@ printEpinephrineTR model =
 
 printFluidBolus : Model -> String
 printFluidBolus model =
-    (format (Locale 0 "," ".") model.fluidBolus) ++ " ml NaCl 0,9%"
+    if model.fluidBolus == 0 then
+        ""
+    else
+        (format (Locale 0 "," ".") model.fluidBolus) ++ " ml NaCl 0,9%"
 
 
 printDefibrillation : Model -> String
 printDefibrillation model =
-    (format (Locale 0 "," ".") model.defibrillation) ++ " Joule"
+    if model.defibrillation == 0 then
+        ""
+    else
+        (format (Locale 0 "," ".") model.defibrillation) ++ " Joule"
 
 
 printCardioversion : Model -> String
 printCardioversion model =
-    (format (Locale 0 "," ".") model.cardioversion) ++ " Joule"
+    if model.cardioversion == 0 then
+        ""
+    else
+        (format (Locale 0 "," ".") model.cardioversion) ++ " Joule"

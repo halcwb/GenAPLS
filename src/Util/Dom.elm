@@ -17,3 +17,8 @@ createDiv =
 createP : String -> a -> (a -> String) -> Html msg
 createP =
     createEl p
+
+
+createTr : String -> a -> (a -> String) -> Html msg
+createTr txt model print =
+    Html.tr [] [ createEl Html.td txt model print ]
