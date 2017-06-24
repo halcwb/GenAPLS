@@ -7,9 +7,9 @@ This project is extremely simple to build or test when Elm
 is installed. 
 
 Just do `elm-reactor --port=8080` in the terminal and navigate to 
-`localhost:8080/gen-apls.elm`.
+`localhost:8080/src/Main.elm`.
 
-Otherwise use `elm-make src/gen-apls.elm --output=generated/index.html`. 
+Otherwise use `elm-make src/Main.elm --output=generated/index.html`. 
 Which will create an index.html in the generated dir.
 
 # Conventions
