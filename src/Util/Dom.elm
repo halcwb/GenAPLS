@@ -22,3 +22,11 @@ createP =
 createTr : String -> a -> (a -> String) -> Html msg
 createTr txt model print =
     Html.tr [] [ createEl Html.td txt model print ]
+
+
+createTr2 : String -> a -> (a -> String) -> Html msg
+createTr2 txt model print =
+    Html.tr []
+        [ (createEl Html.td txt model (\_ -> ""))
+        , (createEl Html.td "" model print)
+        ]

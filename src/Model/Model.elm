@@ -66,7 +66,7 @@ setAge age model =
                 Ok n ->
                     if n >= zero_age then
                         if model.age == no_age then
-                            0.5
+                            0
                         else
                             n
                     else
@@ -83,6 +83,25 @@ setAge age model =
 
 
 -- Calculate
+
+
+calcMinMax : Float -> Float -> (Float -> Float) -> Float -> Float
+calcMinMax min max f x =
+    let
+        y =
+            f x
+    in
+        if y > max then
+            max
+        else if y < min then
+            min
+        else
+            y
+
+
+calcMax : Float -> (Float -> Float) -> Float -> Float
+calcMax =
+    calcMinMax 0
 
 
 calcAge : Model -> Model
@@ -115,13 +134,13 @@ calcWeight model =
 calcTubeSize : Model -> Model
 calcTubeSize model =
     let
+        maxSize =
+            7.5
+
         calc a =
             let
                 c =
-                    ((a / 4)
-                        + 4
-                    )
-                        |> roundBy 0.5
+                    a |> (calcMax maxSize (\n -> ((n / 4) + 4) |> roundBy 0.5))
 
                 l =
                     c - 0.5
@@ -131,8 +150,8 @@ calcTubeSize model =
             in
                 ( l, c, r )
     in
-        if model.age < 1 then
-            { model | tubeSize = ( 3.5, 4.0, 4.5 ) }
+        if model.age == zero_age then
+            { model | tubeSize = ( 3.0, 3.5, 4.0 ) }
         else
             { model | tubeSize = calc model.age }
 
@@ -141,7 +160,10 @@ calcTubLength : Float -> Model -> Model
 calcTubLength n model =
     let
         l =
-            model.age / 2 + n
+            model.age
+                / 2
+                + n
+                |> roundBy 0.5
     in
         if n == 12 then
             { model | tubeLengthOral = l }
@@ -163,20 +185,20 @@ calcEpinephrine : Model -> Model
 calcEpinephrine model =
     let
         iv =
-            0.01
+            calcMinMax 0.01 1 (\n -> 0.01 * n |> roundBy 0.01) model.weight
 
         tr =
-            0.1
+            calcMinMax 0.1 5 (\n -> 0.1 * n |> roundBy 0.1) model.weight
     in
         { model
-            | epinephrineIV = ( iv * model.weight, (iv / 1) * model.weight, (iv / 10) * model.weight )
-            , epinephrineTR = ( tr * model.weight, (tr / 1) * model.weight, (tr / 10) * model.weight )
+            | epinephrineIV = ( iv, iv * 10, iv )
+            , epinephrineTR = ( tr, iv * 10, tr )
         }
 
 
 calcFluidBolus : Model -> Model
 calcFluidBolus model =
-    { model | fluidBolus = model.weight * 20 }
+    { model | fluidBolus = calcMax 1000 (\n -> (n * 20) |> roundBy 10) model.weight }
 
 
 calcDefib : Model -> Model
@@ -190,17 +212,20 @@ calcCardiov model =
 
 
 calculate : Model -> Model
-calculate model =
-    model
-        |> calcWeight
-        |> calcTubeSize
-        |> calcAge
-        |> calcTubeLengthNasal
-        |> calcTubeLengthOral
-        |> calcEpinephrine
-        |> calcFluidBolus
-        |> calcDefib
-        |> calcCardiov
+calculate mdl =
+    if mdl.age == no_age then
+        model
+    else
+        mdl
+            |> calcWeight
+            |> calcTubeSize
+            |> calcAge
+            |> calcTubeLengthNasal
+            |> calcTubeLengthOral
+            |> calcEpinephrine
+            |> calcFluidBolus
+            |> calcDefib
+            |> calcCardiov
 
 
 
@@ -278,18 +303,18 @@ printEpinephrine e r =
                 e
         in
             (format locale2 d ++ " mg" ++ " " ++ r ++ " = ")
-                ++ (format locale2 s1 ++ " ml van 0,1 mg/ml = 1:10.0000 oplossing of ")
-                ++ (format locale2 s2 ++ " ml van 1 mg/ml = 1:10000 oplossing")
+                ++ (format locale1 s1 ++ " ml van 0,1 mg/ml = 1:10.0000 oplossing of ")
+                ++ (format locale1 s2 ++ " ml van 1 mg/ml = 1:10000 oplossing")
 
 
 printEpinephrineIV : Model -> String
 printEpinephrineIV model =
-    printEpinephrine model.epinephrineIV "iv"
+    printEpinephrine model.epinephrineIV ""
 
 
 printEpinephrineTR : Model -> String
 printEpinephrineTR model =
-    printEpinephrine model.epinephrineTR "tracheaal"
+    printEpinephrine model.epinephrineTR ""
 
 
 printFluidBolus : Model -> String

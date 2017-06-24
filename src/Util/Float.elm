@@ -3,12 +3,10 @@ module Util.Float exposing (roundBy, roundBy0_5)
 
 roundBy : Float -> Float -> Float
 roundBy s n =
-    (s * n * 10)
-        |> ceiling
+    (n / s)
+        |> round
         |> toFloat
-        |> (\f -> f / (s * 10))
-        |> ceiling
-        |> toFloat
+        |> (\f -> f * s)
 
 
 roundBy0_5 =

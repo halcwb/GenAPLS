@@ -77,7 +77,7 @@ view model =
                     [ value (toString model.age) ]
                 )
                     |> List.append field
-                    |> (\x -> input x [])
+                    |> (\xs -> input xs [])
     in
         div [ style [ ( "margin", "50px" ) ] ]
             [ stylesheetLink "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
@@ -90,16 +90,16 @@ view model =
                 [ Html.caption [] [ text ("Berekeningen") ]
                 , Html.tbody
                     []
-                    [ createTr "Leeftijd: " model printAge
-                    , createTr "Gewicht: " model printWeight
-                    , createTr "Tube maat: " model printTubeSize
-                    , createTr "Tube lengte oraal: " model printTubeLengthOral
-                    , createTr "Tube lengte nasaal: " model printTubeLengthNasal
-                    , createTr "Epinephrine iv: " model printEpinephrineIV
-                    , createTr "Epinephrine tracheaal: " model printEpinephrineTR
-                    , createTr "Vaat vulling: " model printFluidBolus
-                    , createTr "Defibrillatie: " model printDefibrillation
-                    , createTr "Cardioversie: " model printCardioversion
+                    [ createTr2 "Leeftijd" model printAge
+                    , createTr2 "Gewicht" model printWeight
+                    , createTr2 "Tube maat" model printTubeSize
+                    , createTr2 "Tube lengte oraal" model printTubeLengthOral
+                    , createTr2 "Tube lengte nasaal" model printTubeLengthNasal
+                    , createTr2 "Epinephrine iv/io" model printEpinephrineIV
+                    , createTr2 "Epinephrine tracheaal" model printEpinephrineTR
+                    , createTr2 "Vaat vulling" model printFluidBolus
+                    , createTr2 "Defibrillatie" model printDefibrillation
+                    , createTr2 "Cardioversie" model printCardioversion
                     ]
                 ]
             ]
