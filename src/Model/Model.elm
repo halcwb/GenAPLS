@@ -185,14 +185,14 @@ calcEpinephrine : Model -> Model
 calcEpinephrine model =
     let
         iv =
-            calcMinMax 0.01 1 (\n -> 0.01 * n |> roundBy 0.01) model.weight
+            calcMinMax 0.01 0.5 (\n -> 0.01 * n |> roundBy 0.01) model.weight
 
         tr =
             calcMinMax 0.1 5 (\n -> 0.1 * n |> roundBy 0.1) model.weight
     in
         { model
             | epinephrineIV = ( iv, iv * 10, iv )
-            , epinephrineTR = ( tr, iv * 10, tr )
+            , epinephrineTR = ( tr, tr * 10, tr )
         }
 
 
@@ -230,6 +230,10 @@ calculate mdl =
 
 
 -- Print
+
+
+locale0 =
+    Locale 0 "." ","
 
 
 locale1 =
@@ -303,8 +307,8 @@ printEpinephrine e r =
                 e
         in
             (format locale2 d ++ " mg" ++ " " ++ r ++ " = ")
-                ++ (format locale1 s1 ++ " ml van 0,1 mg/ml = 1:10.0000 oplossing of ")
-                ++ (format locale1 s2 ++ " ml van 1 mg/ml = 1:10000 oplossing")
+                ++ (format locale1 s1 ++ " ml van 0,1 mg/ml (1:10.0000) of ")
+                ++ (format locale1 s2 ++ " ml van 1 mg/ml (1:10000)")
 
 
 printEpinephrineIV : Model -> String
@@ -322,7 +326,7 @@ printFluidBolus model =
     if model.fluidBolus == 0 then
         ""
     else
-        (format (Locale 0 "," ".") model.fluidBolus) ++ " ml NaCl 0,9%"
+        (format locale0 model.fluidBolus) ++ " ml NaCl 0,9%"
 
 
 printDefibrillation : Model -> String
@@ -330,7 +334,7 @@ printDefibrillation model =
     if model.defibrillation == 0 then
         ""
     else
-        (format (Locale 0 "," ".") model.defibrillation) ++ " Joule"
+        (format locale0 model.defibrillation) ++ " Joule"
 
 
 printCardioversion : Model -> String
@@ -338,4 +342,4 @@ printCardioversion model =
     if model.cardioversion == 0 then
         ""
     else
-        (format (Locale 0 "," ".") model.cardioversion) ++ " Joule"
+        (format locale0 model.cardioversion) ++ " Joule"
