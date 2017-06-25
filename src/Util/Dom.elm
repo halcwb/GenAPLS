@@ -6,7 +6,7 @@ import Html.Attributes exposing (..)
 
 createEl : (List (Attribute msg) -> List (Html msg) -> Html msg) -> String -> a -> (a -> String) -> Html msg
 createEl el txt model f =
-    el [] [ text (txt ++ (model |> f)) ]
+    el [ style [ ( "padding", "5px" ) ] ] [ text (txt ++ (model |> f)) ]
 
 
 createDiv : String -> a -> (a -> String) -> Html msg
@@ -25,8 +25,8 @@ createTr txt model print =
 
 
 createTr2 : String -> a -> (a -> String) -> Html msg
-createTr2 txt model print =
+createTr2 txt x print =
     Html.tr []
-        [ (createEl Html.td txt model (\_ -> ""))
-        , (createEl Html.td "" model print)
+        [ (createEl Html.td txt x (\_ -> ""))
+        , (createEl Html.td "" x print)
         ]

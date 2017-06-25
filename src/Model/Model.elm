@@ -3,6 +3,8 @@ module Model.Model exposing (..)
 import FormatNumber exposing (format)
 import FormatNumber.Locales exposing (Locale)
 import Util.Float exposing (roundBy)
+import Util.Locals exposing (..)
+import Model.Medication exposing (..)
 
 
 -- Constants
@@ -20,6 +22,14 @@ half_age =
     0.5
 
 
+min_weight =
+    3
+
+
+max_weight =
+    150
+
+
 
 -- Model
 
@@ -28,6 +38,7 @@ type alias Model =
     { age : Float
     , ageText : String
     , weight : Float
+    , calcWeight : Bool
     , tubeSize : ( Float, Float, Float )
     , tubeLengthOral : Float
     , tubeLengthNasal : Float
@@ -36,6 +47,7 @@ type alias Model =
     , fluidBolus : Float
     , defibrillation : Float
     , cardioversion : Float
+    , medications : List Medication
     }
 
 
@@ -43,6 +55,7 @@ model =
     { age = no_age
     , ageText = ""
     , weight = 0
+    , calcWeight = True
     , tubeSize = ( 0, 0, 0 )
     , tubeLengthOral = 0
     , tubeLengthNasal = 0
@@ -51,6 +64,7 @@ model =
     , fluidBolus = 0
     , defibrillation = 0
     , cardioversion = 0
+    , medications = medicationList
     }
 
 
@@ -77,6 +91,26 @@ setAge age model =
 
         updated_model =
             { model | age = n }
+    in
+        updated_model
+
+
+setWeight : String -> Model -> Model
+setWeight weight model =
+    let
+        n =
+            case String.toFloat weight of
+                Ok n ->
+                    if n >= min_weight && n <= max_weight then
+                        n
+                    else
+                        0
+
+                Err _ ->
+                    model.weight
+
+        updated_model =
+            { model | weight = n, calcWeight = False }
     in
         updated_model
 
@@ -109,26 +143,29 @@ calcAge model =
     if model.age == no_age then
         model
     else
-        { model | ageText = (format (Locale 1 "," ".") model.age) ++ " jaar" }
+        { model | ageText = (format locale1 model.age) ++ " jaar" }
 
 
 calcWeight : Model -> Model
 calcWeight model =
-    let
-        age_zero_weight =
-            3.5
+    if model.calcWeight then
+        let
+            age_zero_weight =
+                3.5
 
-        age_6mo_weight =
-            6
-    in
-        if model.age == no_age then
-            model
-        else if model.age == zero_age then
-            { model | weight = age_zero_weight }
-        else if model.age > zero_age && model.age <= half_age then
-            { model | weight = age_6mo_weight }
-        else
-            { model | weight = model.age * 2.5 + 8 }
+            age_6mo_weight =
+                6
+        in
+            if model.age == no_age then
+                model
+            else if model.age == zero_age then
+                { model | weight = age_zero_weight }
+            else if model.age > zero_age && model.age <= half_age then
+                { model | weight = age_6mo_weight }
+            else
+                { model | weight = model.age * 2.5 + 8 }
+    else
+        model
 
 
 calcTubeSize : Model -> Model
@@ -211,6 +248,15 @@ calcCardiov model =
     { model | cardioversion = model.weight * 2 }
 
 
+calcMeds : Model -> Model
+calcMeds model =
+    { model
+        | medications =
+            model.medications
+                |> List.map (Model.Medication.calculate model.weight)
+    }
+
+
 calculate : Model -> Model
 calculate mdl =
     if mdl.age == no_age then
@@ -226,22 +272,11 @@ calculate mdl =
             |> calcFluidBolus
             |> calcDefib
             |> calcCardiov
+            |> calcMeds
 
 
 
 -- Print
-
-
-locale0 =
-    Locale 0 "." ","
-
-
-locale1 =
-    Locale 1 "." ","
-
-
-locale2 =
-    Locale 2 "." ","
 
 
 printAge : Model -> String
@@ -307,8 +342,8 @@ printEpinephrine e r =
                 e
         in
             (format locale2 d ++ " mg" ++ " " ++ r ++ " = ")
-                ++ (format locale1 s1 ++ " ml van 0,1 mg/ml (1:10.0000) of ")
-                ++ (format locale1 s2 ++ " ml van 1 mg/ml (1:10000)")
+                ++ (format locale1 s1 ++ " ml van 0,1 mg/ml (1:10.000) of ")
+                ++ (format locale1 s2 ++ " ml van 1 mg/ml (1:1000)")
 
 
 printEpinephrineIV : Model -> String

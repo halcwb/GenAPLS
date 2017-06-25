@@ -10,6 +10,7 @@ import FormatNumber.Locales exposing (Locale)
 import Util.Float exposing (roundBy)
 import Util.Dom exposing (..)
 import Model.Model as M exposing (..)
+import Model.Medication as D exposing (..)
 
 
 -- Program
@@ -25,7 +26,8 @@ main =
 
 type Msg
     = Reset
-    | Update String
+    | UpdateAge String
+    | UpdateWeight String
 
 
 update : Msg -> Model -> Model
@@ -34,9 +36,19 @@ update msg model =
         Reset ->
             M.model
 
-        Update txt ->
-            (setAge txt model)
-                |> calculate
+        UpdateAge txt ->
+            let
+                meds =
+                    Debug.log "Meds"
+                        model.medications
+                        |> List.map (\m -> createTr2 "" m D.print)
+            in
+                (setAge txt model)
+                    |> M.calculate
+
+        UpdateWeight txt ->
+            (setWeight txt model)
+                |> M.calculate
 
 
 
@@ -64,42 +76,72 @@ view model =
                     , type_ "number"
                     , Html.Attributes.max "18"
                     , Html.Attributes.min "-0.5"
-                    , onInput Update
+                    , onInput UpdateAge
                     , step "0.5"
                     , width 30
                     , class "form-control"
                     , style [ ( "margin", "10px" ) ]
                     ]
             in
-                (if model.age == no_age then
-                    [ placeholder "Leeftijd in jaren", value "" ]
-                 else
-                    [ value (toString model.age) ]
-                )
-                    |> List.append field
-                    |> (\xs -> input xs [])
+                Html.div [ class "form-group" ]
+                    [ Html.label [] [ text ("Leeftijd (jaren)") ]
+                    , ((if model.age == no_age then
+                            [ placeholder "Leeftijd in jaren", value "" ]
+                        else
+                            [ value (toString model.age) ]
+                       )
+                        |> List.append field
+                        |> (\xs -> input xs [])
+                      )
+                    ]
+
+        weightInput =
+            let
+                field =
+                    [ name "weight"
+                    , type_ "number"
+                    , Html.Attributes.max "150"
+                    , Html.Attributes.min "3"
+                    , onInput UpdateWeight
+                    , step "1"
+                    , width 30
+                    , class "form-control"
+                    , style [ ( "margin", "10px" ) ]
+                    ]
+            in
+                Html.div [ class "form-group" ]
+                    [ Html.label [] [ text ("Gewicht (kg)") ]
+                    , ((if model.weight == 0 then
+                            [ placeholder "Gewicht in kg", value "" ]
+                        else
+                            [ value (toString model.weight) ]
+                       )
+                        |> List.append field
+                        |> (\xs -> input xs [])
+                      )
+                    ]
     in
         div [ style [ ( "margin", "50px" ) ] ]
             [ stylesheetLink "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
-            , p [ class "bg-primary", style [ ( "padding", "10px" ) ] ] [ text "Voer een leeftijd in" ]
-            , Html.form [ class "form-inline" ]
+            , p [ class "bg-primary", style [ ( "padding", "10px" ) ] ] [ text "Pediatrische Noodlijst Berekeningen" ]
+            , Html.form [ class "form-inline", style [ ( "margin", "20px" ) ] ]
                 [ ageInput
+                , weightInput
                 , button [ onClick Reset, class "btn btn-primary" ] [ text "Verwijderen" ]
                 ]
-            , Html.table [ class "table" ]
+            , Html.table [ (class "table"), (class "table-hover"), (class "table-responsive") ]
                 [ Html.caption [] [ text ("Berekeningen") ]
-                , Html.tbody
-                    []
-                    [ createTr2 "Leeftijd" model printAge
-                    , createTr2 "Gewicht" model printWeight
-                    , createTr2 "Tube maat" model printTubeSize
-                    , createTr2 "Tube lengte oraal" model printTubeLengthOral
-                    , createTr2 "Tube lengte nasaal" model printTubeLengthNasal
-                    , createTr2 "Epinephrine iv/io" model printEpinephrineIV
-                    , createTr2 "Epinephrine tracheaal" model printEpinephrineTR
-                    , createTr2 "Vaat vulling" model printFluidBolus
-                    , createTr2 "Defibrillatie" model printDefibrillation
-                    , createTr2 "Cardioversie" model printCardioversion
-                    ]
+                , Html.tbody []
+                    ([ createTr2 "tube maat" model printTubeSize
+                     , createTr2 "tube lengte oraal" model printTubeLengthOral
+                     , createTr2 "tube lengte nasaal" model printTubeLengthNasal
+                     , createTr2 "epinephrine iv/io" model printEpinephrineIV
+                     , createTr2 "epinephrine tracheaal" model printEpinephrineTR
+                     , createTr2 "vaat vulling" model printFluidBolus
+                     , createTr2 "defibrillatie" model printDefibrillation
+                     , createTr2 "cardioversie" model printCardioversion
+                     ]
+                        ++ (List.map (\m -> createTr2 m.name m D.printDose) model.medications)
+                    )
                 ]
             ]
