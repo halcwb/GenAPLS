@@ -2,9 +2,10 @@ module Model.Model exposing (..)
 
 import FormatNumber exposing (format)
 import FormatNumber.Locales exposing (Locale)
+import Model.Medication exposing (..)
 import Util.Float exposing (roundBy)
 import Util.Locals exposing (..)
-import Model.Medication exposing (..)
+import Util.String as US exposing (..)
 
 
 -- Constants
@@ -28,6 +29,14 @@ min_weight =
 
 max_weight =
     150
+
+
+max_defib =
+    150
+
+
+max_epi =
+    1
 
 
 
@@ -92,7 +101,7 @@ setAge age model =
         updated_model =
             { model | age = n }
     in
-        updated_model
+    updated_model
 
 
 setWeight : String -> Model -> Model
@@ -112,7 +121,7 @@ setWeight weight model =
         updated_model =
             { model | weight = n, calcWeight = False }
     in
-        updated_model
+    updated_model
 
 
 
@@ -125,12 +134,12 @@ calcMinMax min max f x =
         y =
             f x
     in
-        if y > max then
-            max
-        else if y < min then
-            min
-        else
-            y
+    if y > max then
+        max
+    else if y < min then
+        min
+    else
+        y
 
 
 calcMax : Float -> (Float -> Float) -> Float -> Float
@@ -143,7 +152,7 @@ calcAge model =
     if model.age == no_age then
         model
     else
-        { model | ageText = (format locale1 model.age) ++ " jaar" }
+        { model | ageText = format locale1 model.age ++ " jaar" }
 
 
 calcWeight : Model -> Model
@@ -156,14 +165,14 @@ calcWeight model =
             age_6mo_weight =
                 6
         in
-            if model.age == no_age then
-                model
-            else if model.age == zero_age then
-                { model | weight = age_zero_weight }
-            else if model.age > zero_age && model.age <= half_age then
-                { model | weight = age_6mo_weight }
-            else
-                { model | weight = model.age * 2.5 + 8 }
+        if model.age == no_age then
+            model
+        else if model.age == zero_age then
+            { model | weight = age_zero_weight }
+        else if model.age > zero_age && model.age <= half_age then
+            { model | weight = age_6mo_weight }
+        else
+            { model | weight = model.age * 2.5 + 8 }
     else
         model
 
@@ -177,7 +186,7 @@ calcTubeSize model =
         calc a =
             let
                 c =
-                    a |> (calcMax maxSize (\n -> ((n / 4) + 4) |> roundBy 0.5))
+                    a |> calcMax maxSize (\n -> ((n / 4) + 4) |> roundBy 0.5)
 
                 l =
                     c - 0.5
@@ -185,12 +194,12 @@ calcTubeSize model =
                 r =
                     c + 0.5
             in
-                ( l, c, r )
+            ( l, c, r )
     in
-        if model.age == zero_age then
-            { model | tubeSize = ( 3.0, 3.5, 4.0 ) }
-        else
-            { model | tubeSize = calc model.age }
+    if model.age == zero_age then
+        { model | tubeSize = ( 3.0, 3.5, 4.0 ) }
+    else
+        { model | tubeSize = calc model.age }
 
 
 calcTubLength : Float -> Model -> Model
@@ -202,10 +211,10 @@ calcTubLength n model =
                 + n
                 |> roundBy 0.5
     in
-        if n == 12 then
-            { model | tubeLengthOral = l }
-        else
-            { model | tubeLengthNasal = l }
+    if n == 12 then
+        { model | tubeLengthOral = l }
+    else
+        { model | tubeLengthNasal = l }
 
 
 calcTubeLengthOral : Model -> Model
@@ -227,10 +236,10 @@ calcEpinephrine model =
         tr =
             calcMinMax 0.1 5 (\n -> 0.1 * n |> roundBy 0.1) model.weight
     in
-        { model
-            | epinephrineIV = ( iv, iv * 10, iv )
-            , epinephrineTR = ( tr, tr * 10, tr )
-        }
+    { model
+        | epinephrineIV = ( iv, iv * 10, iv )
+        , epinephrineTR = ( tr, tr * 10, tr )
+    }
 
 
 calcFluidBolus : Model -> Model
@@ -240,12 +249,32 @@ calcFluidBolus model =
 
 calcDefib : Model -> Model
 calcDefib model =
-    { model | defibrillation = model.weight * 4 }
+    let
+        d =
+            model.weight * 4
+    in
+    { model
+        | defibrillation =
+            if d > max_defib then
+                max_defib
+            else
+                d
+    }
 
 
 calcCardiov : Model -> Model
 calcCardiov model =
-    { model | cardioversion = model.weight * 2 }
+    let
+        d =
+            model.weight * 4
+    in
+    { model
+        | cardioversion =
+            if d > max_defib then
+                max_defib
+            else
+                model.weight * 2
+    }
 
 
 calcMeds : Model -> Model
@@ -307,11 +336,11 @@ printTubeSize model =
             ( r, c, l ) =
                 model.tubeSize
         in
-            (r |> print)
-                ++ " - "
-                ++ (c |> print)
-                ++ " - "
-                ++ (l |> print)
+        (r |> print)
+            ++ " - "
+            ++ (c |> print)
+            ++ " - "
+            ++ (l |> print)
 
 
 printTubeLength : Float -> String
@@ -341,9 +370,9 @@ printEpinephrine e r =
             ( d, s1, s2 ) =
                 e
         in
-            (format locale2 d ++ " mg" ++ " " ++ r ++ " = ")
-                ++ (format locale1 s1 ++ " ml van 0,1 mg/ml (1:10.000) of ")
-                ++ (format locale1 s2 ++ " ml van 1 mg/ml (1:1000)")
+        (US.fixPrecision d 1 ++ " mg" ++ " " ++ r ++ " = ")
+            ++ (US.fixPrecision s1 1 ++ " ml van 0,1 mg/ml (1:10.000) of ")
+            ++ (US.fixPrecision s2 1 ++ " ml van 1 mg/ml (1:1000)")
 
 
 printEpinephrineIV : Model -> String
@@ -361,7 +390,7 @@ printFluidBolus model =
     if model.fluidBolus == 0 then
         ""
     else
-        (format locale0 model.fluidBolus) ++ " ml NaCl 0,9%"
+        format locale0 model.fluidBolus ++ " ml NaCl 0,9%"
 
 
 printDefibrillation : Model -> String
@@ -369,7 +398,7 @@ printDefibrillation model =
     if model.defibrillation == 0 then
         ""
     else
-        (format locale0 model.defibrillation) ++ " Joule"
+        format locale0 model.defibrillation ++ " Joule"
 
 
 printCardioversion : Model -> String
@@ -377,4 +406,4 @@ printCardioversion model =
     if model.cardioversion == 0 then
         ""
     else
-        (format locale0 model.cardioversion) ++ " Joule"
+        format locale0 model.cardioversion ++ " Joule"

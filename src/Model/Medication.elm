@@ -2,6 +2,7 @@ module Model.Medication exposing (..)
 
 import FormatNumber exposing (..)
 import Util.Locals exposing (..)
+import Util.String exposing (..)
 
 
 type alias Medication =
@@ -37,12 +38,12 @@ printDose med =
     if med.dose == 0 then
         ""
     else
-        (format locale2 med.dose) ++ " " ++ med.unit
+        Util.String.fixPrecision med.dose 1 ++ " " ++ med.unit
 
 
 print : Medication -> String
 print med =
-    med.name ++ (format locale2 med.dose) ++ " " ++ med.unit
+    med.name ++ format locale2 med.dose ++ " " ++ med.unit
 
 
 calculate : Float -> Medication -> Medication
@@ -51,21 +52,25 @@ calculate kg med =
         d =
             kg * med.dosePerKg
     in
-        { med
-            | dose =
-                if med.max > 0 && d > med.max then
-                    med.max
-                else
-                    d
-        }
+    { med
+        | dose =
+            if med.max > 0 && d > med.max then
+                med.max
+            else
+                d
+    }
 
 
 medicationDefs =
-    [ ( "propofol", 2, 0, "mg" )
+    [ ( "glucose", 0.2, 25, "gram" )
+    , ( "NaBic", 0.5, 50, "mmol" )
+    , ( "propofol", 2, 0, "mg" )
     , ( "midazolam", 0.2, 10, "mg" )
     , ( "esketamine", 0.5, 5, "mg" )
+    , ( "etomidaat", 0.5, 20, "mg" )
     , ( "fentanyl", 1, 50, "mcg" )
     , ( "morfine", 0.1, 10, "mg" )
+    , ( "rocuronium", 1, 10, "mg" )
     ]
 
 
