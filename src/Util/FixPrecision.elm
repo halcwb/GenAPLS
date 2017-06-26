@@ -1,4 +1,4 @@
-module Util.String exposing (..)
+module Util.FixPrecision exposing (fixPrecision)
 
 import FormatNumber exposing (..)
 import Util.Locals exposing (..)

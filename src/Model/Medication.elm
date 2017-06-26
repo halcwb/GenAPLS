@@ -1,8 +1,8 @@
 module Model.Medication exposing (..)
 
 import FormatNumber exposing (..)
+import Util.FixPrecision exposing (fixPrecision)
 import Util.Locals exposing (..)
-import Util.String exposing (..)
 
 
 type alias Medication =
@@ -38,7 +38,7 @@ printDose med =
     if med.dose == 0 then
         ""
     else
-        Util.String.fixPrecision med.dose 1 ++ " " ++ med.unit
+        fixPrecision med.dose 1 ++ " " ++ med.unit
 
 
 print : Medication -> String

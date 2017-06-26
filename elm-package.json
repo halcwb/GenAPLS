@@ -4,7 +4,9 @@
     "repository": "https://github.com/halcwb/genapls.git",
     "license": "BSD3",
     "source-directories": [
-        "src"
+        "src",
+        "src/Util",
+        "src/Model"
     ],
     "exposed-modules": [],
     "dependencies": {

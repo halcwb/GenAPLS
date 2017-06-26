@@ -1,6 +1,6 @@
-module Util.Dom exposing (..)
+module Util.DomUtils exposing (..)
 
-import Html exposing (Html, text, div, p, button, input, Attribute)
+import Html exposing (Attribute, Html, button, div, input, p, text)
 import Html.Attributes exposing (..)
 
 
@@ -27,6 +27,6 @@ createTr txt model print =
 createTr2 : String -> a -> (a -> String) -> Html msg
 createTr2 txt x print =
     Html.tr []
-        [ (createEl Html.td txt x (\_ -> ""))
-        , (createEl Html.td "" x print)
+        [ createEl Html.td txt x (\_ -> "")
+        , createEl Html.td "" x print
         ]

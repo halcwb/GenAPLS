@@ -3,9 +3,9 @@ module Model.Model exposing (..)
 import FormatNumber exposing (format)
 import FormatNumber.Locales exposing (Locale)
 import Model.Medication exposing (..)
-import Util.Float exposing (roundBy)
+import Util.FixPrecision as US exposing (fixPrecision)
+import Util.FloatUtils exposing (roundBy)
 import Util.Locals exposing (..)
-import Util.String as US exposing (..)
 
 
 -- Constants

@@ -1,4 +1,4 @@
-module Util.Float exposing (roundBy, roundBy0_5)
+module Util.FloatUtils exposing (roundBy, roundBy0_5)
 
 
 roundBy : Float -> Float -> Float

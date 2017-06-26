@@ -1,16 +1,16 @@
 module Main exposing (..)
 
-import VirtualDom
-import Json.Encode exposing (string)
-import Html exposing (Html, text, div, p, button, input, Attribute)
-import Html.Attributes exposing (..)
-import Html.Events exposing (onClick, onInput)
 import FormatNumber exposing (format)
 import FormatNumber.Locales exposing (Locale)
-import Util.Float exposing (roundBy)
-import Util.Dom exposing (..)
-import Model.Model as M exposing (..)
+import Html exposing (Attribute, Html, button, div, input, p, text)
+import Html.Attributes exposing (..)
+import Html.Events exposing (onClick, onInput)
+import Json.Encode exposing (string)
 import Model.Medication as D exposing (..)
+import Model.Model as M exposing (..)
+import Util.DomUtils exposing (..)
+import Util.FloatUtils exposing (roundBy)
+import VirtualDom
 
 
 -- Program
@@ -43,11 +43,11 @@ update msg model =
                         model.medications
                         |> List.map (\m -> createTr2 "" m D.print)
             in
-                (setAge txt model)
-                    |> M.calculate
+            setAge txt model
+                |> M.calculate
 
         UpdateWeight txt ->
-            (setWeight txt model)
+            setWeight txt model
                 |> M.calculate
 
 
@@ -83,17 +83,16 @@ view model =
                     , style [ ( "margin", "10px" ) ]
                     ]
             in
-                Html.div [ class "form-group" ]
-                    [ Html.label [] [ text ("Leeftijd (jaren)") ]
-                    , ((if model.age == no_age then
-                            [ placeholder "Leeftijd in jaren", value "" ]
-                        else
-                            [ value (toString model.age) ]
-                       )
-                        |> List.append field
-                        |> (\xs -> input xs [])
-                      )
-                    ]
+            Html.div [ class "form-group" ]
+                [ Html.label [] [ text "Leeftijd (jaren)" ]
+                , (if model.age == no_age then
+                    [ placeholder "Leeftijd in jaren", value "" ]
+                   else
+                    [ value (toString model.age) ]
+                  )
+                    |> List.append field
+                    |> (\xs -> input xs [])
+                ]
 
         weightInput =
             let
@@ -109,39 +108,38 @@ view model =
                     , style [ ( "margin", "10px" ) ]
                     ]
             in
-                Html.div [ class "form-group" ]
-                    [ Html.label [] [ text ("Gewicht (kg)") ]
-                    , ((if model.weight == 0 then
-                            [ placeholder "Gewicht in kg", value "" ]
-                        else
-                            [ value (toString model.weight) ]
-                       )
-                        |> List.append field
-                        |> (\xs -> input xs [])
-                      )
-                    ]
+            Html.div [ class "form-group" ]
+                [ Html.label [] [ text "Gewicht (kg)" ]
+                , (if model.weight == 0 then
+                    [ placeholder "Gewicht in kg", value "" ]
+                   else
+                    [ value (toString model.weight) ]
+                  )
+                    |> List.append field
+                    |> (\xs -> input xs [])
+                ]
     in
-        div [ style [ ( "margin", "50px" ) ] ]
-            [ stylesheetLink "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
-            , p [ class "bg-primary", style [ ( "padding", "10px" ) ] ] [ text "Pediatrische Noodlijst Berekeningen" ]
-            , Html.form [ class "form-inline", style [ ( "margin", "20px" ) ] ]
-                [ ageInput
-                , weightInput
-                , button [ onClick Reset, class "btn btn-primary" ] [ text "Verwijderen" ]
-                ]
-            , Html.table [ (class "table"), (class "table-hover"), (class "table-responsive") ]
-                [ Html.caption [] [ text ("Berekeningen") ]
-                , Html.tbody []
-                    ([ createTr2 "tube maat" model printTubeSize
-                     , createTr2 "tube lengte oraal" model printTubeLengthOral
-                     , createTr2 "tube lengte nasaal" model printTubeLengthNasal
-                     , createTr2 "epinephrine iv/io" model printEpinephrineIV
-                     , createTr2 "epinephrine tracheaal" model printEpinephrineTR
-                     , createTr2 "vaat vulling" model printFluidBolus
-                     , createTr2 "defibrillatie" model printDefibrillation
-                     , createTr2 "cardioversie" model printCardioversion
-                     ]
-                        ++ (List.map (\m -> createTr2 m.name m D.printDose) model.medications)
-                    )
-                ]
+    div [ style [ ( "margin", "50px" ) ] ]
+        [ stylesheetLink "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+        , p [ class "bg-primary", style [ ( "padding", "10px" ) ] ] [ text "Pediatrische Noodlijst Berekeningen" ]
+        , Html.form [ class "form-inline", style [ ( "margin", "20px" ) ] ]
+            [ ageInput
+            , weightInput
+            , button [ onClick Reset, class "btn btn-primary" ] [ text "Verwijderen" ]
             ]
+        , Html.table [ class "table", class "table-hover", class "table-responsive" ]
+            [ Html.caption [] [ text "Berekeningen" ]
+            , Html.tbody []
+                ([ createTr2 "tube maat" model printTubeSize
+                 , createTr2 "tube lengte oraal" model printTubeLengthOral
+                 , createTr2 "tube lengte nasaal" model printTubeLengthNasal
+                 , createTr2 "epinephrine iv/io" model printEpinephrineIV
+                 , createTr2 "epinephrine tracheaal" model printEpinephrineTR
+                 , createTr2 "vaat vulling" model printFluidBolus
+                 , createTr2 "defibrillatie" model printDefibrillation
+                 , createTr2 "cardioversie" model printCardioversion
+                 ]
+                    ++ List.map (\m -> createTr2 m.name m D.printDose) model.medications
+                )
+            ]
+        ]
