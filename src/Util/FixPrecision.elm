@@ -15,15 +15,15 @@ countFirstInString c s =
                             ( n, is0 ) =
                                 n0
                         in
-                        if is0 && c_ == c then
-                            ( n + 1, True )
-                        else
-                            ( n, False )
+                            if is0 && c_ == c then
+                                ( n + 1, True )
+                            else
+                                ( n, False )
                     )
                     ( 0, True )
     in
-    Debug.log "countFirstInString"
-        n
+        Debug.log "countFirstInString"
+            n
 
 
 getPower : Float -> Int -> Int
@@ -52,12 +52,12 @@ getPower num prec =
             else
                 prec - l
     in
-    Debug.log ("GetPower" ++ " n: " ++ n ++ " d: " ++ d)
-        (if d == "" || num > 1 then
-            p
-         else
-            p + countFirstInString '0' d
-        )
+        Debug.log ("GetPower" ++ " n: " ++ n ++ " d: " ++ d)
+            (if d == "" || num > 1 then
+                p
+             else
+                p + countFirstInString '0' d
+            )
 
 
 fixPrecision : Float -> Int -> String
