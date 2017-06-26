@@ -7,6 +7,8 @@
 # Add readme
 !README.md
 
+# Add to do text file
+!todo.txt
 
 # Add elm files
 !*.elm

@@ -101,7 +101,7 @@ setAge age model =
         updated_model =
             { model | age = n }
     in
-        updated_model
+    updated_model
 
 
 setWeight : String -> Model -> Model
@@ -121,7 +121,7 @@ setWeight weight model =
         updated_model =
             { model | weight = n, calcWeight = False }
     in
-        updated_model
+    updated_model
 
 
 
@@ -134,12 +134,12 @@ calcMinMax min max f x =
         y =
             f x
     in
-        if y > max then
-            max
-        else if y < min then
-            min
-        else
-            y
+    if y > max then
+        max
+    else if y < min then
+        min
+    else
+        y
 
 
 calcMax : Float -> (Float -> Float) -> Float -> Float
@@ -165,14 +165,14 @@ calcWeight model =
             age_6mo_weight =
                 6
         in
-            if model.age == no_age then
-                model
-            else if model.age == zero_age then
-                { model | weight = age_zero_weight }
-            else if model.age > zero_age && model.age <= half_age then
-                { model | weight = age_6mo_weight }
-            else
-                { model | weight = model.age * 2.5 + 8 }
+        if model.age == no_age then
+            model
+        else if model.age == zero_age then
+            { model | weight = age_zero_weight }
+        else if model.age > zero_age && model.age <= half_age then
+            { model | weight = age_6mo_weight }
+        else
+            { model | weight = model.age * 2.5 + 8 }
     else
         model
 
@@ -194,12 +194,12 @@ calcTubeSize model =
                 r =
                     c + 0.5
             in
-                ( l, c, r )
+            ( l, c, r )
     in
-        if model.age == zero_age then
-            { model | tubeSize = ( 3.0, 3.5, 4.0 ) }
-        else
-            { model | tubeSize = calc model.age }
+    if model.age == zero_age then
+        { model | tubeSize = ( 3.0, 3.5, 4.0 ) }
+    else
+        { model | tubeSize = calc model.age }
 
 
 calcTubLength : Float -> Model -> Model
@@ -211,10 +211,10 @@ calcTubLength n model =
                 + n
                 |> roundBy 0.5
     in
-        if n == 12 then
-            { model | tubeLengthOral = l }
-        else
-            { model | tubeLengthNasal = l }
+    if n == 12 then
+        { model | tubeLengthOral = l }
+    else
+        { model | tubeLengthNasal = l }
 
 
 calcTubeLengthOral : Model -> Model
@@ -236,10 +236,10 @@ calcEpinephrine model =
         tr =
             calcMinMax 0.1 5 (\n -> 0.1 * n |> roundBy 0.1) model.weight
     in
-        { model
-            | epinephrineIV = ( iv, iv * 10, iv )
-            , epinephrineTR = ( tr, tr * 10, tr )
-        }
+    { model
+        | epinephrineIV = ( iv, iv * 10, iv )
+        , epinephrineTR = ( tr, tr * 10, tr )
+    }
 
 
 calcFluidBolus : Model -> Model
@@ -253,13 +253,13 @@ calcDefib model =
         d =
             model.weight * 4
     in
-        { model
-            | defibrillation =
-                if d > max_defib then
-                    max_defib
-                else
-                    d
-        }
+    { model
+        | defibrillation =
+            if d > max_defib then
+                max_defib
+            else
+                d
+    }
 
 
 calcCardiov : Model -> Model
@@ -268,13 +268,13 @@ calcCardiov model =
         d =
             model.weight * 4
     in
-        { model
-            | cardioversion =
-                if d > max_defib then
-                    max_defib
-                else
-                    model.weight * 2
-        }
+    { model
+        | cardioversion =
+            if d > max_defib then
+                max_defib
+            else
+                model.weight * 2
+    }
 
 
 calcMeds : Model -> Model
@@ -336,11 +336,11 @@ printTubeSize model =
             ( r, c, l ) =
                 model.tubeSize
         in
-            (r |> print)
-                ++ " - "
-                ++ (c |> print)
-                ++ " - "
-                ++ (l |> print)
+        (r |> print)
+            ++ " - "
+            ++ (c |> print)
+            ++ " - "
+            ++ (l |> print)
 
 
 printTubeLength : Float -> String
@@ -370,9 +370,9 @@ printEpinephrine e r =
             ( d, s1, s2 ) =
                 e
         in
-            (US.fixPrecision d 1 ++ " mg" ++ " " ++ r ++ " = ")
-                ++ (US.fixPrecision s1 1 ++ " ml van 0,1 mg/ml (1:10.000) of ")
-                ++ (US.fixPrecision s2 1 ++ " ml van 1 mg/ml (1:1000)")
+        (US.fixPrecision d 1 ++ " mg" ++ " " ++ r ++ " = ")
+            ++ (US.fixPrecision s1 1 ++ " ml van 0,1 mg/ml (1:10.000) of ")
+            ++ (US.fixPrecision s2 1 ++ " ml van 1 mg/ml (1:1000)")
 
 
 printEpinephrineIV : Model -> String

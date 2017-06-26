@@ -1,9 +1,9 @@
 module Model.Medication exposing (..)
 
 import FormatNumber exposing (..)
+import String.Extra exposing (replace)
 import Util.FixPrecision exposing (fixPrecision)
 import Util.Locals exposing (..)
-import String.Extra exposing (replace)
 
 
 type alias Medication =
@@ -70,21 +70,21 @@ printDoseVolume med =
         v =
             printVolume med
     in
-        if d == "" then
-            ""
-        else
-            d
-                ++ (if v == "" then
-                        ""
-                    else
-                        " = "
-                            ++ (printVolume med)
-                            ++ " van "
-                            ++ ((toString med.conc) |> replace "." ",")
-                            ++ " "
-                            ++ med.unit
-                            ++ "/ml"
-                   )
+    if d == "" then
+        ""
+    else
+        d
+            ++ (if v == "" then
+                    ""
+                else
+                    " = "
+                        ++ printVolume med
+                        ++ " van "
+                        ++ (toString med.conc |> replace "." ",")
+                        ++ " "
+                        ++ med.unit
+                        ++ "/ml"
+               )
 
 
 print : Medication -> String
@@ -101,20 +101,20 @@ calculate kg med =
         d =
             kg * med.dosePerKg
     in
-        { med
-            | dose =
-                if med.max > 0 && d > med.max then
-                    med.max
-                else if med.min > 0 && d < med.min then
-                    med.min
-                else
-                    d
-            , volume =
-                if med.conc > 0 then
-                    d / med.conc
-                else
-                    0
-        }
+    { med
+        | dose =
+            if med.max > 0 && d > med.max then
+                med.max
+            else if med.min > 0 && d < med.min then
+                med.min
+            else
+                d
+        , volume =
+            if med.conc > 0 then
+                d / med.conc
+            else
+                0
+    }
 
 
 medicationDefs =
