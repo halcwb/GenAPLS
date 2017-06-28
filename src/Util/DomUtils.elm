@@ -30,3 +30,12 @@ createTr2 txt x print =
         [ createEl Html.td txt x (\_ -> "")
         , createEl Html.td "" x print
         ]
+
+
+createTr3 : String -> String -> a -> (a -> String) -> Html msg
+createTr3 cat txt x print =
+    Html.tr []
+        [ createEl Html.td cat x (\_ -> "")
+        , createEl Html.td txt x (\_ -> "")
+        , createEl Html.td "" x print
+        ]
