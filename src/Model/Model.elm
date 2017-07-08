@@ -6,6 +6,7 @@ import Model.Medication exposing (..)
 import Util.FixPrecision as US exposing (fixPrecision)
 import Util.FloatUtils exposing (roundBy)
 import Util.Locals exposing (..)
+import Util.ListUtils exposing (findNearestMax)
 
 
 -- Constants
@@ -37,6 +38,22 @@ max_defib =
 
 max_epi =
     1
+
+
+joules =
+    [ 1
+    , 2
+    , 3
+    , 5
+    , 7
+    , 10
+    , 20
+    , 30
+    , 50
+    , 70
+    , 100
+    , 150
+    ]
 
 
 
@@ -251,7 +268,8 @@ calcDefib : Model -> Model
 calcDefib model =
     let
         d =
-            model.weight * 4
+            joules
+                |> findNearestMax (model.weight * 4)
     in
         { model
             | defibrillation =
@@ -266,14 +284,15 @@ calcCardiov : Model -> Model
 calcCardiov model =
     let
         d =
-            model.weight * 4
+            joules
+                |> findNearestMax (model.weight * 2)
     in
         { model
             | cardioversion =
                 if d > max_defib then
                     max_defib
                 else
-                    model.weight * 2
+                    d
         }
 
 

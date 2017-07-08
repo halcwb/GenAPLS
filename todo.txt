@@ -1,6 +1,4 @@
 Features:
-- calc defib and cardioversion from list
-- add categories
 - add navigation query for age and weight
 - make categories selectable
 - add infusion/bolus type dose calculations

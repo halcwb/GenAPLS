@@ -11,6 +11,19 @@ import Model.Model as M exposing (..)
 import Util.DomUtils exposing (..)
 import Util.FloatUtils exposing (roundBy)
 import VirtualDom
+import Bootstrap.Grid as GRID
+
+
+-- Constants
+
+
+bootstrapLink =
+    "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+
+
+bootstrapCSS =
+    "../node_modules/bootstrap/dist/css/bootstrap.css"
+
 
 
 -- Program
@@ -73,18 +86,18 @@ view model =
             let
                 field =
                     [ name "age"
+                    , id "age"
                     , type_ "number"
                     , Html.Attributes.max "18"
                     , Html.Attributes.min "-0.5"
                     , onInput UpdateAge
                     , step "0.5"
-                    , width 30
                     , class "form-control"
                     , style [ ( "margin", "10px" ) ]
                     ]
             in
                 Html.div [ class "form-group" ]
-                    [ Html.label [] [ text "Leeftijd (jaren)" ]
+                    [ Html.label [ for "age" ] [ text "Leeftijd (jaren)" ]
                     , (if model.age == no_age then
                         [ placeholder "Leeftijd in jaren", value "" ]
                        else
@@ -118,28 +131,31 @@ view model =
                         |> List.append field
                         |> (\xs -> input xs [])
                     ]
+
+        body =
+            div [ class "container-fluid", style [ ( "margin", "50px" ) ] ]
+                [ stylesheetLink bootstrapCSS
+                , p [ class "bg-primary", style [ ( "padding", "10px" ) ] ] [ text "Pediatrische Noodlijst Berekeningen" ]
+                , Html.form [ class "form-inline", style [ ( "margin", "20px" ) ] ]
+                    [ ageInput
+                    , weightInput
+                    , button [ onClick Reset, class "btn btn-primary" ] [ text "Verwijderen" ]
+                    ]
+                , p [ class "bg-info", style [ ( "padding", "10px" ) ] ] [ text "Berekeningen" ]
+                , Html.table [ class "table", class "table-hover", class "table-responsive" ]
+                    [ Html.tbody []
+                        ([ createTr3 "reanimatie" "tube maat" model printTubeSize
+                         , createTr3 "reanimatie" "tube lengte oraal" model printTubeLengthOral
+                         , createTr3 "reanimatie" "tube lengte nasaal" model printTubeLengthNasal
+                         , createTr3 "reanimatie" "epinephrine iv/io" model printEpinephrineIV
+                         , createTr3 "reanimatie" "epinephrine tracheaal" model printEpinephrineTR
+                         , createTr3 "reanimatie" "vaat vulling" model printFluidBolus
+                         , createTr3 "reanimatie" "defibrillatie" model printDefibrillation
+                         , createTr3 "reanimatie" "cardioversie" model printCardioversion
+                         ]
+                            ++ List.map (\m -> createTr3 m.category m.name m D.printDoseVolume) model.medications
+                        )
+                    ]
+                ]
     in
-        div [ style [ ( "margin", "50px" ) ] ]
-            [ stylesheetLink "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
-            , p [ class "bg-primary", style [ ( "padding", "10px" ) ] ] [ text "Pediatrische Noodlijst Berekeningen" ]
-            , Html.form [ class "form-inline", style [ ( "margin", "20px" ) ] ]
-                [ ageInput
-                , weightInput
-                , button [ onClick Reset, class "btn btn-primary" ] [ text "Verwijderen" ]
-                ]
-            , Html.table [ class "table", class "table-hover", class "table-responsive" ]
-                [ Html.caption [] [ text "Berekeningen" ]
-                , Html.tbody []
-                    ([ createTr3 "reanimatie" "tube maat" model printTubeSize
-                     , createTr3 "reanimatie" "tube lengte oraal" model printTubeLengthOral
-                     , createTr3 "reanimatie" "tube lengte nasaal" model printTubeLengthNasal
-                     , createTr3 "reanimatie" "epinephrine iv/io" model printEpinephrineIV
-                     , createTr3 "reanimatie" "epinephrine tracheaal" model printEpinephrineTR
-                     , createTr3 "reanimatie" "vaat vulling" model printFluidBolus
-                     , createTr3 "reanimatie" "defibrillatie" model printDefibrillation
-                     , createTr3 "reanimatie" "cardioversie" model printCardioversion
-                     ]
-                        ++ List.map (\m -> createTr3 m.category m.name m D.printDoseVolume) model.medications
-                    )
-                ]
-            ]
+        body
