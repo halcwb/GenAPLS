@@ -3,6 +3,7 @@ Features:
 - make categories selectable
 - add infusion/bolus type dose calculations
 - add standard solutions
+- add dose column
 
 Technical:
 - add tests

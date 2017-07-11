@@ -2,7 +2,7 @@ module Main exposing (..)
 
 import FormatNumber exposing (format)
 import FormatNumber.Locales exposing (Locale)
-import Html exposing (Attribute, Html, button, div, input, p, text)
+import Html exposing (Attribute, Html, button, div, input, p, text, h1, h2)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, onInput)
 import Json.Encode exposing (string)
@@ -12,6 +12,9 @@ import Util.DomUtils exposing (..)
 import Util.FloatUtils exposing (roundBy)
 import VirtualDom
 import Bootstrap.Grid as GRID
+import Bootstrap.Grid.Col as COL
+import Bootstrap.Grid.Row as ROW
+import Bootstrap.Card as CARD
 
 
 -- Constants
@@ -82,6 +85,9 @@ stylesheetLink url =
 view : Model -> Html Msg
 view model =
     let
+        header =
+            h2 [ class "bg-primary", style [ ( "padding", "10px" ) ] ] [ text "Pediatrische Noodlijst Berekeningen" ]
+
         ageInput =
             let
                 field =
@@ -135,7 +141,7 @@ view model =
         body =
             div [ class "container-fluid", style [ ( "margin", "50px" ) ] ]
                 [ stylesheetLink bootstrapCSS
-                , p [ class "bg-primary", style [ ( "padding", "10px" ) ] ] [ text "Pediatrische Noodlijst Berekeningen" ]
+                , header
                 , Html.form [ class "form-inline", style [ ( "margin", "20px" ) ] ]
                     [ ageInput
                     , weightInput
@@ -158,4 +164,8 @@ view model =
                     ]
                 ]
     in
-        body
+        GRID.container []
+            [ GRID.row []
+                [ GRID.col [] [ body ]
+                ]
+            ]
