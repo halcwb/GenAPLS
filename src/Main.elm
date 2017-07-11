@@ -15,6 +15,7 @@ import Bootstrap.Grid as GRID
 import Bootstrap.Grid.Col as COL
 import Bootstrap.Grid.Row as ROW
 import Bootstrap.Card as CARD
+import Navigation
 
 
 -- Constants
@@ -33,38 +34,51 @@ bootstrapCSS =
 
 
 main =
-    Html.beginnerProgram { model = M.model, view = view, update = update }
+    Navigation.program UrlChange
+        { init = M.init
+        , view = view
+        , update = update
+        , subscriptions = subscriptions
+        }
 
 
 
+---    Html.beginnerProgram { model = M.model, view = view, update = update }
 -- Update
 
 
 type Msg
-    = Reset
+    = Clear
+    | UrlChange Navigation.Location
     | UpdateAge String
     | UpdateWeight String
 
 
-update : Msg -> Model -> Model
+update : Msg -> Model -> ( Model, Cmd msg )
 update msg model =
-    case msg of
-        Reset ->
-            M.model
+    let
+        updatedModel =
+            case msg of
+                UrlChange location ->
+                    M.init location |> Tuple.first
 
-        UpdateAge txt ->
-            let
-                meds =
-                    Debug.log "Meds"
-                        model.medications
-                        |> List.map (\m -> createTr2 "" m D.print)
-            in
-                setAge txt model
-                    |> M.calculate
+                Clear ->
+                    M.model
 
-        UpdateWeight txt ->
-            setWeight txt model
-                |> M.calculate
+                UpdateAge txt ->
+                    let
+                        meds =
+                            model.medications
+                                |> List.map (\m -> createTr2 "" m D.print)
+                    in
+                        setAge txt model
+                            |> M.calculate
+
+                UpdateWeight txt ->
+                    setWeight txt model
+                        |> M.calculate
+    in
+        ( updatedModel, Cmd.none )
 
 
 
@@ -145,8 +159,8 @@ view model =
                 , Html.form [ class "form-inline", style [ ( "margin", "20px" ) ] ]
                     [ ageInput
                     , weightInput
-                    , button [ onClick Reset, class "btn btn-primary" ] [ text "Verwijderen" ]
                     ]
+                , p [] [ button [ onClick Clear, class "btn btn-primary" ] [ text "Verwijderen" ] ]
                 , p [ class "bg-info", style [ ( "padding", "10px" ) ] ] [ text "Berekeningen" ]
                 , Html.table [ class "table", class "table-hover", class "table-responsive" ]
                     [ Html.tbody []
@@ -169,3 +183,12 @@ view model =
                 [ GRID.col [] [ body ]
                 ]
             ]
+
+
+
+-- Subscriptions
+
+
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    Sub.none

@@ -7,6 +7,10 @@ import Util.FixPrecision as US exposing (fixPrecision)
 import Util.FloatUtils exposing (roundBy)
 import Util.Locals exposing (..)
 import Util.ListUtils exposing (findNearestMax)
+import Navigation
+import UrlParser exposing ((<?>), s, stringParam)
+import Dict exposing (Dict)
+import Http
 
 
 -- Constants
@@ -94,6 +98,45 @@ model =
     }
 
 
+init : Navigation.Location -> ( Model, Cmd msg )
+init location =
+    let
+        age =
+            case
+                location.search
+                    |> parseParams
+                    |> Dict.get "age"
+            of
+                Just a ->
+                    case a |> String.toFloat of
+                        Ok af ->
+                            af
+
+                        Err _ ->
+                            no_age
+
+                Nothing ->
+                    no_age
+
+        wght =
+            case
+                location.search
+                    |> parseParams
+                    |> Dict.get "weight"
+            of
+                Just w ->
+                    w
+
+                Nothing ->
+                    ""
+
+        initModel =
+            { model | age = age }
+                |> setWeight wght
+    in
+        ( initModel |> calculate, Cmd.none )
+
+
 
 -- Setters
 
@@ -124,19 +167,16 @@ setAge age model =
 setWeight : String -> Model -> Model
 setWeight weight model =
     let
-        n =
+        updated_model =
             case String.toFloat weight of
                 Ok n ->
                     if n >= min_weight && n <= max_weight then
-                        n
+                        { model | weight = n, calcWeight = False }
                     else
-                        0
+                        model
 
                 Err _ ->
-                    model.weight
-
-        updated_model =
-            { model | weight = n, calcWeight = False }
+                    model
     in
         updated_model
 
@@ -426,3 +466,26 @@ printCardioversion model =
         ""
     else
         format locale0 model.cardioversion ++ " Joule"
+
+
+
+--- UrlParser
+
+
+parseParams : String -> Dict String String
+parseParams queryString =
+    queryString
+        |> String.dropLeft 1
+        |> String.split "&"
+        |> List.filterMap toKeyValuePair
+        |> Dict.fromList
+
+
+toKeyValuePair : String -> Maybe ( String, String )
+toKeyValuePair segment =
+    case String.split "=" segment of
+        [ key, value ] ->
+            Maybe.map2 (,) (Http.decodeUri key) (Http.decodeUri value)
+
+        _ ->
+            Nothing
