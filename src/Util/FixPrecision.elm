@@ -60,6 +60,7 @@ getPower num prec =
             )
 
 
-fixPrecision : Float -> Int -> String
-fixPrecision num prec =
+fixPrecision : Int -> Float -> String
+fixPrecision prec num =
     format (local_ (getPower num prec)) num
+

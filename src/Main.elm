@@ -2,16 +2,11 @@ module Main exposing (..)
 
 -- import FormatNumber exposing (format)
 
-import FormatNumber.Locales exposing (Locale)
 import Html exposing (Attribute, Html, button, div, input, p, text, h1, h2, h3, h4)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onClick, onInput)
-import Json.Encode exposing (string)
 import Model.Medication as D exposing (..)
 import Model.Model as M exposing (..)
 import Util.DomUtils exposing (..)
-import Util.FloatUtils exposing (roundBy)
-import VirtualDom
 import Navigation
 import Material
 import Material.Color as Color
@@ -21,7 +16,7 @@ import Material.Options as Opts exposing (css, onClick)
 import Material.Layout as Layout
 import Material.Textfield as Textfield
 import Material.Table as Table
-
+import Util.FixPrecision exposing (fixPrecision)
 
 -- Program
 
@@ -43,8 +38,10 @@ main =
 type Msg
     = Clear
     | UrlChange Navigation.Location
-    | UpdateAge String
+    | UpdateYear String
+    | UpdateMonth String
     | UpdateWeight String
+    | Calculate
     | Mdl (Material.Msg Msg)
 
 
@@ -57,15 +54,23 @@ update msg model =
         Clear ->
             ( M.model, Cmd.none )
 
-        UpdateAge txt ->
-            ( setAge txt model
-                |> M.calculate
+        UpdateYear txt ->
+            ( setAge Year txt model
+            , Cmd.none
+            )
+
+        UpdateMonth txt ->
+            ( setAge Month txt model
+            , Cmd.none
+            )
+
+        Calculate ->
+            ( model |> M.calculate
             , Cmd.none
             )
 
         UpdateWeight txt ->
             ( setWeight txt model
-                |> M.calculate
             , Cmd.none
             )
 
@@ -80,6 +85,12 @@ update msg model =
 view : Model -> Html Msg
 view model =
     let
+        numToString n =
+            if model.age < 0 then
+                ""
+            else
+                toString n
+
         header =
             h2 [ style [ ( "padding", "10px" ) ] ] [ text "Pediatrische Noodlijst Berekeningen" ]
 
@@ -90,36 +101,61 @@ view model =
                 [ Button.ripple
                 , Button.colored
                 , Button.raised
-                , Opts.onClick Clear
+                , Opts.onClick
+                    (if model |> M.isCalculated then
+                        Clear
+                     else
+                        Calculate
+                    )
                 ]
-                [ text "Verwijderen" ]
+                [ text
+                    (if model |> M.isCalculated then
+                        "Verwijder"
+                     else
+                        "Bereken"
+                    )
+                ]
 
-        ageInput =
+        yearInput =
             Textfield.render Mdl
                 [ 0 ]
                 model.mdl
                 [ Textfield.label "Leeftijd (jaren)"
                 , Textfield.floatingLabel
-                , Textfield.value (model.ageText)
-                , Opts.onInput UpdateAge
+                , Textfield.value <| numToString model.year
+                , Opts.onInput UpdateYear
+                , Opts.onBlur Calculate
                 , Opts.css "width" "150px"
                 , Opts.css "margin-right" "50px"
                 ]
                 []
 
-        weightInput =
+        monthInput =
             Textfield.render Mdl
-                [ 1 ]
+                [ 0 ]
                 model.mdl
-                [ Textfield.label "Gewicht (kg)"
+                [ Textfield.label "Leeftijd (maanden)"
                 , Textfield.floatingLabel
-                , Textfield.value (toString model.weight)
-                , Opts.onInput UpdateWeight
+                , Textfield.value <| numToString model.month
+                , Opts.onInput UpdateMonth
+                , Opts.onBlur Calculate
                 , Opts.css "width" "150px"
                 , Opts.css "margin-right" "50px"
                 ]
                 []
 
+        --         weightInput =
+        --             Textfield.render Mdl
+        --                 [ 1 ]
+        --                 model.mdl
+        --                 [ Textfield.label "Gewicht (kg)"
+        --                 , Textfield.floatingLabel
+        --                 , Textfield.value (toString model.weight)
+        --                 , Opts.onInput UpdateWeight
+        --                 , Opts.css "width" "150px"
+        --                 , Opts.css "margin-right" "50px"
+        --                 ]
+        --                 []
         body =
             let
                 createTr =
@@ -143,11 +179,11 @@ view model =
             in
                 div [ style [ ( "margin", "50px" ) ] ]
                     [ div []
-                        [ ageInput
-                        , weightInput
+                        [ yearInput
+                        , monthInput
                         , clearBtn
                         ]
-                    , p [] [ h3 [] [ text "Berekeningen" ] ]
+                    , p [] [ h3 [] [ "Berekeningen: " ++ (model.weight |> fixPrecision 1) ++ " kg" |> text ] ]
                     , Table.table []
                         [ createTh4 "Categorie" "Item" "Waarde" "Oplossing"
                         , Table.tbody []

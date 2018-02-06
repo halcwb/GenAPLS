@@ -4,6 +4,7 @@ import FormatNumber exposing (..)
 import String.Extra exposing (replace)
 import Util.FixPrecision exposing (fixPrecision)
 import Util.Locals exposing (..)
+import Util.FloatUtils exposing (roundBy)
 import Model.Patient exposing (Patient, getWeight, getAge)
 
 
@@ -52,12 +53,15 @@ create ( cat, name, dosePerKg, min, max, conc, unit, rem ) =
 
 printVolume : Bolus -> String
 printVolume med =
-    if med.volume == 0 then
-        ""
-    else
-        fixPrecision med.volume 1
-            ++ " "
-            ++ "ml"
+    let fix =
+      if med.volume >= 1 then fixPrecision 2 else fixPrecision 1
+    in
+      if med.volume == 0 then
+          ""
+      else
+           fix med.volume
+              ++ " "
+              ++ "ml"
 
 
 printDose : Bolus -> String
@@ -65,7 +69,7 @@ printDose med =
     if med.dose == 0 then
         ""
     else
-        fixPrecision med.dose 1 ++ " " ++ med.unit
+        fixPrecision 2 med.dose ++ " " ++ med.unit
 
 
 printDoseVolume : Bolus -> ( String, String )
@@ -107,22 +111,33 @@ print med =
 calculate : Float -> Bolus -> Bolus
 calculate kg med =
     let
-        d =
-            kg * med.dosePerKg
+        ( d, v ) =
+            let
+                d =
+                    kg * med.dosePerKg
+
+                d_ =
+                    if med.max > 0 && d > med.max then
+                        med.max
+                    else if med.min > 0 && d < med.min then
+                        med.min
+                    else
+                        d
+
+                v =
+                    d / med.conc
+
+                v_ =
+                    if v >= 10 then
+                        v |> roundBy 1
+                    else
+                        v |> roundBy 0.1
+            in
+                ( v_ * med.conc, v_ )
     in
         { med
-            | dose =
-                if med.max > 0 && d > med.max then
-                    med.max
-                else if med.min > 0 && d < med.min then
-                    med.min
-                else
-                    d
-            , volume =
-                if med.conc > 0 then
-                    d / med.conc
-                else
-                    0
+            | dose = d
+            , volume = v |> roundBy 0.1
         }
 
 
