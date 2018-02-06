@@ -12,6 +12,7 @@ import UrlParser exposing ((<?>), s, stringParam)
 import Dict exposing (Dict)
 import Http
 
+import Material as MDL exposing (Model)
 
 -- Constants
 
@@ -78,6 +79,7 @@ type alias Model =
     , defibrillation : Float
     , cardioversion : Float
     , medications : List Bolus
+    , mdl : MDL.Model
     }
 
 
@@ -95,6 +97,7 @@ model =
     , defibrillation = 0
     , cardioversion = 0
     , medications = medicationList
+    , mdl = MDL.model
     }
 
 
@@ -149,7 +152,7 @@ setAge age model =
                 Ok n ->
                     if n >= zero_age then
                         if model.age == no_age then
-                            0
+                            n
                         else
                             n
                     else
@@ -420,52 +423,52 @@ printTubeLengthNasal model =
     printTubeLength model.tubeLengthNasal
 
 
-printEpinephrine : ( Float, Float, Float ) -> String -> String
+printEpinephrine : ( Float, Float, Float ) -> String -> (String, String)
 printEpinephrine e r =
     if e == ( 0, 0, 0 ) then
-        ""
+        ("", "")
     else
         let
             ( d, s1, s2 ) =
                 e
         in
-            (US.fixPrecision d 1 ++ " mg" ++ " " ++ r ++ " = ")
-                ++ (US.fixPrecision s1 1 ++ " ml van 0,1 mg/ml (1:10.000) of ")
-                ++ (US.fixPrecision s2 1 ++ " ml van 1 mg/ml (1:1000)")
+            ((US.fixPrecision d 1 ++ " mg" ++ " " ++ r)
+            , (US.fixPrecision s1 1 ++ " ml van 0,1 mg/ml (1:10.000) of ")
+            ++ (US.fixPrecision s2 1 ++ " ml van 1 mg/ml (1:1000)"))
 
 
-printEpinephrineIV : Model -> String
+printEpinephrineIV : Model -> (String, String)
 printEpinephrineIV model =
     printEpinephrine model.epinephrineIV ""
 
 
-printEpinephrineTR : Model -> String
+printEpinephrineTR : Model -> (String, String)
 printEpinephrineTR model =
     printEpinephrine model.epinephrineTR ""
 
 
-printFluidBolus : Model -> String
+printFluidBolus : Model -> (String, String)
 printFluidBolus model =
     if model.fluidBolus == 0 then
-        ""
+        ("", "")
     else
-        format locale0 model.fluidBolus ++ " ml NaCl 0,9%"
+        (format locale0 model.fluidBolus ++ " ml NaCl 0,9%", "")
 
 
-printDefibrillation : Model -> String
+printDefibrillation : Model -> (String, String)
 printDefibrillation model =
     if model.defibrillation == 0 then
-        ""
+        ("", "")
     else
-        format locale0 model.defibrillation ++ " Joule"
+        (format locale0 model.defibrillation ++ " Joule", "")
 
 
-printCardioversion : Model -> String
+printCardioversion : Model -> (String, String)
 printCardioversion model =
     if model.cardioversion == 0 then
-        ""
+        ("", "")
     else
-        format locale0 model.cardioversion ++ " Joule"
+        (format locale0 model.cardioversion ++ " Joule", "")
 
 
 

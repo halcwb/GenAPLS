@@ -68,7 +68,7 @@ printDose med =
         fixPrecision med.dose 1 ++ " " ++ med.unit
 
 
-printDoseVolume : Bolus -> String
+printDoseVolume : Bolus -> ( String, String )
 printDoseVolume med =
     let
         d =
@@ -78,20 +78,20 @@ printDoseVolume med =
             printVolume med
     in
         if d == "" then
-            ""
+            ( "", "" )
         else
-            d
-                ++ (if v == "" then
-                        ""
-                    else
-                        " = "
-                            ++ printVolume med
-                            ++ " van "
-                            ++ (toString med.conc |> replace "." ",")
-                            ++ " "
-                            ++ med.unit
-                            ++ "/ml"
-                   )
+            ( d
+            , (if v == "" then
+                ""
+               else
+                printVolume med
+                    ++ " van "
+                    ++ (toString med.conc |> replace "." ",")
+                    ++ " "
+                    ++ med.unit
+                    ++ "/ml"
+              )
+            )
 
 
 print : Bolus -> String
