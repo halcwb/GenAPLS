@@ -17,6 +17,7 @@ import Material.Layout as Layout
 import Material.Textfield as Textfield
 import Material.Table as Table
 import Util.FixPrecision exposing (fixPrecision)
+import Material.Typography as Typography
 
 -- Program
 
@@ -183,7 +184,7 @@ view model =
                         , monthInput
                         , clearBtn
                         ]
-                    , p [] [ h3 [] [ "Berekeningen: " ++ (model.weight |> fixPrecision 1) ++ " kg" |> text ] ]
+                    , Opts.div [ Typography.subhead ] [ "Berekeningen op basis van gewicht: " ++ (model.weight |> fixPrecision 1) ++ " kg" |> text ]
                     , Table.table []
                         [ createTh4 "Categorie" "Item" "Waarde" "Oplossing"
                         , Table.tbody []
