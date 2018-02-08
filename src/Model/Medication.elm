@@ -4,8 +4,7 @@ import FormatNumber exposing (..)
 import String.Extra exposing (replace)
 import Util.FixPrecision exposing (fixPrecision)
 import Util.Locals exposing (..)
-import Util.FloatUtils exposing (roundBy)
-import Model.Patient exposing (Patient, getWeight, getAge)
+import Util.FloatUtils exposing (roundBy, calcDoseVol)
 
 
 type alias Bolus =
@@ -22,6 +21,7 @@ type alias Bolus =
     }
 
 
+medication : Bolus
 medication =
     { category = ""
     , name = ""
@@ -111,29 +111,7 @@ print med =
 calculate : Float -> Bolus -> Bolus
 calculate kg med =
     let
-        ( d, v ) =
-            let
-                d =
-                    kg * med.dosePerKg
-
-                d_ =
-                    if med.max > 0 && d > med.max then
-                        med.max
-                    else if med.min > 0 && d < med.min then
-                        med.min
-                    else
-                        d
-
-                v =
-                    d / med.conc
-
-                v_ =
-                    if v >= 10 then
-                        v |> roundBy 1
-                    else
-                        v |> roundBy 0.1
-            in
-                ( v_ * med.conc, v_ )
+        ( d, v ) = calcDoseVol kg med.dosePerKg med.conc med.min med.max
     in
         { med
             | dose = d
@@ -141,6 +119,9 @@ calculate kg med =
         }
 
 
+
+medicationDefs :
+    List ( String, String, Float, Float, Float, Float, String, String )
 medicationDefs =
     [ ( "reanimatie", "glucose 10%", 0.2, 0, 25, 0.1, "gram", "" )
     , ( "reanimatie", "NaBic 8,4", 0.5, 0, 50, 1, "mmol", "" )
@@ -159,10 +140,19 @@ medicationDefs =
     , ( "anticonvulsiva", "diazepam", 0.5, 0, 10, 2, "mg", "" )
     , ( "anticonvulsiva", "fenytoine", 20, 0, 1500, 50, "mg", "" )
     , ( "anticonvulsiva", "midazolam", 0.1, 0, 10, 5, "mg", "" )
-    , ( "diversen", "prednisolon", 1, 0, 25, 0, "mg", "" )
+    , ( "diversen", "prednisolon", 1, 0, 25, 12.5, "mg", "" )
     , ( "diversen", "mannitol 15%", 0.5, 0, 50, 0.15, "gram", "" )
     ]
 
 
+medicationList : List Bolus
 medicationList =
     medicationDefs |> List.map create
+
+
+
+
+
+
+
+

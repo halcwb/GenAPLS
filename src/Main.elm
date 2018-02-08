@@ -12,12 +12,29 @@ import Material
 import Material.Color as Color
 import Material.Scheme exposing (topWithScheme)
 import Material.Button as Button
-import Material.Options as Opts exposing (css, onClick)
+import Material.Options as Options
 import Material.Layout as Layout
 import Material.Textfield as Textfield
 import Material.Table as Table
 import Util.FixPrecision exposing (fixPrecision)
 import Material.Typography as Typography
+import Material.Select as Select
+import Material.Dropdown.Item as Item
+import VirtualDom
+import Json.Encode as Encode
+import Material.Footer as Footer
+import Material.Menu as Menu
+import Material.Icon as Icon
+
+
+-- Constants
+
+
+selectCSS : String
+selectCSS =
+    "../vendor/elm-mdl/styles/select.css"
+
+
 
 -- Program
 
@@ -39,10 +56,12 @@ main =
 type Msg
     = Clear
     | UrlChange Navigation.Location
-    | UpdateYear String
-    | UpdateMonth String
+    | UpdateYear Int String
+    | UpdateMonth Int String
     | UpdateWeight String
+    | CheckWeight
     | Calculate
+    | SelectIndicatie String
     | Mdl (Material.Msg Msg)
 
 
@@ -55,13 +74,14 @@ update msg model =
         Clear ->
             ( M.model, Cmd.none )
 
-        UpdateYear txt ->
-            ( setAge Year txt model
-            , Cmd.none
-            )
+        UpdateYear _ txt ->
+            Debug.log ("UpdateYear: " ++ txt)
+                ( setAge Year txt model |> M.calculate
+                , Cmd.none
+                )
 
-        UpdateMonth txt ->
-            ( setAge Month txt model
+        UpdateMonth _ txt ->
+            ( setAge Month txt model |> M.calculate
             , Cmd.none
             )
 
@@ -71,7 +91,26 @@ update msg model =
             )
 
         UpdateWeight txt ->
-            ( setWeight txt model
+            ( setWeight txt model |> M.calculate
+            , Cmd.none
+            )
+
+        CheckWeight ->
+            ( if model.weight == 0 then
+                { model | weightText = "" }
+              else
+                model
+                    |> M.calculate
+            , Cmd.none
+            )
+
+        SelectIndicatie ind ->
+            ( if ind == "alles" then
+                { model | indicatieSelect = [] }
+              else if model.indicatieSelect |> List.any (\x -> x == ind) then
+                { model | indicatieSelect = model.indicatieSelect |> List.filter (\x -> x /= ind) }
+              else
+                { model | indicatieSelect = model.indicatieSelect |> List.append [ ind ] }
             , Cmd.none
             )
 
@@ -83,9 +122,29 @@ update msg model =
 -- View
 
 
+stylesheetLink : String -> Html msg
+stylesheetLink url =
+    VirtualDom.node
+        "link"
+        [ property "rel" (Encode.string "stylesheet")
+        , property "type" (Encode.string "text/css")
+        , property "href" (Encode.string url)
+        ]
+        []
+
+
 view : Model -> Html Msg
 view model =
     let
+        eqs x1 x2 =
+            x1 == x2
+
+        checkmark x =
+            if x then
+                Icon.view "check" [ Options.css "width" "40px" ]
+            else
+                Options.span [ Options.css "width" "40px" ] []
+
         numToString n =
             if model.age < 0 then
                 ""
@@ -93,7 +152,63 @@ view model =
                 toString n
 
         header =
-            h2 [ style [ ( "padding", "10px" ) ] ] [ text "Pediatrische Noodlijst Berekeningen" ]
+            h2 [ style [ ( "margin", "50px" ) ] ] [ text "Pediatrische Noodlijst Berekeningen" ]
+
+        createTr =
+            createTr5 model emptyString
+
+        emptyString =
+            (\_ -> "")
+
+        printFst f m =
+            m |> f |> Tuple.first
+
+        printSec f m =
+            let
+                s =
+                    m |> f |> Tuple.second
+            in
+                if s == "" then
+                    s
+                else
+                    "= " ++ (m |> f |> Tuple.second)
+
+        indicatie =
+            Menu.render Mdl
+                [ 0 ]
+                model.mdl
+                [ Menu.bottomLeft ]
+                [ Item.item
+                    [ Item.onSelect (SelectIndicatie "alles") ]
+                    [ checkmark (model.indicatieSelect |> List.isEmpty), text "Alles" ]
+                , Item.item
+                    [ Item.onSelect (SelectIndicatie "reanimatie") ]
+                    [ checkmark (model.indicatieSelect |> List.any (eqs "reanimatie")), text "Reanimatie" ]
+                , Item.item
+                    [ Item.onSelect (SelectIndicatie "intubatie") ]
+                    [ checkmark (model.indicatieSelect |> List.any (eqs "intubatie")), text "Intubatie" ]
+                , Item.item
+                    [ Item.onSelect (SelectIndicatie "antidota") ]
+                    [ checkmark (model.indicatieSelect |> List.any (eqs "antidota")), text "Antidota" ]
+                , Item.item
+                    [ Item.onSelect (SelectIndicatie "antiarrythmica") ]
+                    [ checkmark (model.indicatieSelect |> List.any (eqs "antiarrythmica")), text "Antiarrythmica" ]
+                , Item.item
+                    [ Item.onSelect (SelectIndicatie "anticonvulsiva") ]
+                    [ checkmark (model.indicatieSelect |> List.any (eqs "anticonvulsiva")), text "Anticonvulsiva" ]
+                , Item.item
+                    [ Item.onSelect (SelectIndicatie "diversen") ]
+                    [ checkmark (model.indicatieSelect |> List.any (eqs "diversen")), text "Diversen" ]
+                ]
+
+        createTh s1 s2 s3 s4 =
+            Table.thead []
+                [ Table.th [] [ indicatie ]
+                , Table.th [] [ text s1 ]
+                , createEl Table.th s2 identity
+                , createEl Table.th s3 identity
+                , createEl Table.th s4 identity
+                ]
 
         clearBtn =
             Button.render Mdl
@@ -102,112 +217,125 @@ view model =
                 [ Button.ripple
                 , Button.colored
                 , Button.raised
-                , Opts.onClick
-                    (if model |> M.isCalculated then
-                        Clear
-                     else
-                        Calculate
-                    )
+                , Options.onClick Clear
                 ]
-                [ text
-                    (if model |> M.isCalculated then
-                        "Verwijder"
-                     else
-                        "Bereken"
-                    )
+                [ text "Verwijder"
                 ]
 
-        yearInput =
-            Textfield.render Mdl
+        yearDropdown =
+            Select.render Mdl
                 [ 0 ]
                 model.mdl
-                [ Textfield.label "Leeftijd (jaren)"
+                [ Select.label "Leeftijd (jaren)"
+                , Select.floatingLabel
+                , Select.below
+                , Select.value
+                    (if model.age == M.no_age then
+                        ""
+                     else
+                        toString model.year
+                    )
+                , Options.attribute <| style [ ( "margin-right", "20px" ) ]
+                ]
+                (List.range 0 18
+                    |> List.map toString
+                    |> List.map
+                        (\s ->
+                            Select.item
+                                [ Item.onSelect (UpdateYear 0 s)
+                                ]
+                                [ text s
+                                ]
+                        )
+                )
+
+        monthDropdown =
+            Select.render Mdl
+                [ 1 ]
+                model.mdl
+                [ Select.label "Leeftijd (maanden)"
+                , Select.floatingLabel
+                , Select.below
+                , Select.value
+                    (if model.age == M.no_age then
+                        ""
+                     else
+                        toString model.month
+                    )
+                , Options.attribute <| style [ ( "margin-right", "20px" ) ]
+                ]
+                (List.range 0 11
+                    |> List.map toString
+                    |> List.map
+                        (\s ->
+                            Select.item
+                                [ Item.onSelect (UpdateMonth 0 s)
+                                ]
+                                [ text s
+                                ]
+                        )
+                )
+
+        weightInput =
+            Textfield.render Mdl
+                [ 1 ]
+                model.mdl
+                [ Textfield.label "Gewicht (kg)"
                 , Textfield.floatingLabel
-                , Textfield.value <| numToString model.year
-                , Opts.onInput UpdateYear
-                , Opts.onBlur Calculate
-                , Opts.css "width" "150px"
-                , Opts.css "margin-right" "50px"
+                , Textfield.value model.weightText
+                , Options.onInput UpdateWeight
+                , Options.onBlur CheckWeight
+                , Options.css "width" "150px"
+                , Options.css "margin-right" "50px"
                 ]
                 []
 
-        monthInput =
-            Textfield.render Mdl
-                [ 0 ]
-                model.mdl
-                [ Textfield.label "Leeftijd (maanden)"
-                , Textfield.floatingLabel
-                , Textfield.value <| numToString model.month
-                , Opts.onInput UpdateMonth
-                , Opts.onBlur Calculate
-                , Opts.css "width" "150px"
-                , Opts.css "margin-right" "50px"
-                ]
-                []
+        table =
+            ([ ( "reanimatie", createTr (\_ -> "reanimatie") (\_ -> "tube maat") printTubeSize emptyString )
+             , ( "reanimatie", createTr (\_ -> "reanimatie") (\_ -> "tube lengte oraal") printTubeLengthOral emptyString )
+             , ( "reanimatie", createTr (\_ -> "reanimatie") (\_ -> "tube lengte nasaal") printTubeLengthNasal emptyString )
+             , ( "reanimatie", createTr (\_ -> "reanimatie") (\_ -> "epinephrine iv/io") (printFst printEpinephrineIV) (printSec printEpinephrineIV) )
+             , ( "reanimatie", createTr (\_ -> "reanimatie") (\_ -> "epinephrine tracheaal") (printFst printEpinephrineTR) (printSec printEpinephrineTR) )
+             , ( "reanimatie", createTr (\_ -> "reanimatie") (\_ -> "vaat vulling") (printFst printFluidBolus) (printSec printFluidBolus) )
+             , ( "reanimatie", createTr (\_ -> "reanimatie") (\_ -> "defibrillatie") (printFst printDefibrillation) (printSec printDefibrillation) )
+             , ( "reanimatie", createTr (\_ -> "reanimatie") (\_ -> "cardioversie") (printFst printCardioversion) (printSec printCardioversion) )
+             ]
+                ++ List.map (\m -> ( m.category, createTr5 m emptyString (\_ -> m.category) (\_ -> m.name) (printFst D.printDoseVolume) (printSec D.printDoseVolume) )) model.medications
+            )
+                |> List.filter (\( ind, _ ) -> (model.indicatieSelect |> List.isEmpty) || (model.indicatieSelect |> List.any (eqs ind)))
+                |> List.map Tuple.second
 
-        --         weightInput =
-        --             Textfield.render Mdl
-        --                 [ 1 ]
-        --                 model.mdl
-        --                 [ Textfield.label "Gewicht (kg)"
-        --                 , Textfield.floatingLabel
-        --                 , Textfield.value (toString model.weight)
-        --                 , Opts.onInput UpdateWeight
-        --                 , Opts.css "width" "150px"
-        --                 , Opts.css "margin-right" "50px"
-        --                 ]
-        --                 []
         body =
-            let
-                createTr =
-                    createTr4 model
-
-                emptyString =
-                    (\_ -> "")
-
-                printFst f m =
-                    m |> f |> Tuple.first
-
-                printSec f m =
-                    let
-                        s =
-                            m |> f |> Tuple.second
-                    in
-                        if s == "" then
-                            s
-                        else
-                            "= " ++ (m |> f |> Tuple.second)
-            in
-                div [ style [ ( "margin", "50px" ) ] ]
-                    [ div []
-                        [ yearInput
-                        , monthInput
-                        , clearBtn
-                        ]
-                    , Opts.div [ Typography.subhead ] [ "Berekeningen op basis van gewicht: " ++ (model.weight |> fixPrecision 1) ++ " kg" |> text ]
-                    , Table.table []
-                        [ createTh4 "Categorie" "Item" "Waarde" "Oplossing"
-                        , Table.tbody []
-                            ([ createTr (\_ -> "reanimatie") (\_ -> "tube maat") printTubeSize emptyString
-                             , createTr (\_ -> "reanimatie") (\_ -> "tube lengte oraal") printTubeLengthOral emptyString
-                             , createTr (\_ -> "reanimatie") (\_ -> "tube lengte nasaal") printTubeLengthNasal emptyString
-                             , createTr (\_ -> "reanimatie") (\_ -> "epinephrine iv/io") (printFst printEpinephrineIV) (printSec printEpinephrineIV)
-                             , createTr (\_ -> "reanimatie") (\_ -> "epinephrine tracheaal") (printFst printEpinephrineTR) (printSec printEpinephrineTR)
-                             , createTr (\_ -> "reanimatie") (\_ -> "vaat vulling") (printFst printFluidBolus) (printSec printFluidBolus)
-                             , createTr (\_ -> "reanimatie") (\_ -> "defibrillatie") (printFst printDefibrillation) (printSec printDefibrillation)
-                             , createTr (\_ -> "reanimatie") (\_ -> "cardioversie") (printFst printCardioversion) (printSec printCardioversion)
-                             ]
-                                ++ List.map (\m -> createTr4 m (\_ -> m.category) (\_ -> m.name) (printFst D.printDoseVolume) (printSec D.printDoseVolume)) model.medications
-                            )
-                        ]
+            div [ style [ ( "margin", "50px" ) ] ]
+                [ div []
+                    [ yearDropdown
+                    , monthDropdown
+                    , weightInput
+                    , clearBtn
                     ]
+                , Options.div [ Typography.subhead ] [ "Berekeningen op basis van gewicht: " ++ (model.weight |> fixPrecision 2) ++ " kg" |> text ]
+                , Table.table []
+                    [ createTh "Indicatie" "Interventie" "Waarde" "Bereiding"
+                    , Table.tbody [] table
+                    ]
+                , Footer.mini [ Options.css "margin-top" "50px" ]
+                    { left =
+                        Footer.left []
+                            [ Footer.logo [] [ Footer.html <| text "Informedica 2018" ]
+                            ]
+                    , right =
+                        Footer.right []
+                            [ Footer.logo [] [ Footer.html <| text "versie 0.2.0-beta" ]
+                            ]
+                    }
+                ]
     in
         Layout.render Mdl
             model.mdl
             [ Layout.fixedHeader
             ]
             { drawer = []
-            , header = [ header ]
+            , header = [ stylesheetLink selectCSS, header ]
             , main =
                 [ div []
                     [ Material.Scheme.topWithScheme Color.Teal Color.Red body ]
@@ -221,5 +349,7 @@ view model =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions _ =
-    Sub.none
+subscriptions model =
+    Sub.batch
+        [ Material.subscriptions Mdl model
+        ]

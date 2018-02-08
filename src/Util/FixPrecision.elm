@@ -22,8 +22,7 @@ countFirstInString c s =
                     )
                     ( 0, True )
     in
-        Debug.log "countFirstInString"
-            n
+        n
 
 
 getPower : Float -> Int -> Int
@@ -52,15 +51,13 @@ getPower num prec =
             else
                 prec - l
     in
-        Debug.log ("GetPower" ++ " n: " ++ n ++ " d: " ++ d)
-            (if d == "" || num > 1 then
-                p
-             else
-                p + countFirstInString '0' d
-            )
+        (if d == "" || num > 1 then
+            p
+         else
+            p + countFirstInString '0' d
+        )
 
 
 fixPrecision : Int -> Float -> String
 fixPrecision prec num =
     format (local_ (getPower num prec)) num
-

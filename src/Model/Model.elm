@@ -3,7 +3,7 @@ module Model.Model exposing (..)
 import FormatNumber exposing (format)
 import Model.Medication exposing (..)
 import Util.FixPrecision as US exposing (fixPrecision)
-import Util.FloatUtils exposing (roundBy)
+import Util.FloatUtils exposing (roundBy, calcDoseVol)
 import Util.Locals exposing (..)
 import Util.ListUtils exposing (findNearestMax)
 import Navigation
@@ -87,6 +87,7 @@ type alias Model =
     , month : Float
     , ageText : String
     , weight : Float
+    , weightText : String
     , calcWeight : Bool
     , tubeSize : ( Float, Float, Float )
     , tubeLengthOral : Float
@@ -98,6 +99,7 @@ type alias Model =
     , cardioversion : Float
     , medications : List Bolus
     , calculated : Calculated
+    , indicatieSelect : List String
     , mdl : MDL.Model
     }
 
@@ -109,6 +111,7 @@ model =
     , month = 0
     , ageText = ""
     , weight = 0
+    , weightText = ""
     , calcWeight = True
     , tubeSize = ( 0, 0, 0 )
     , tubeLengthOral = 0
@@ -120,6 +123,7 @@ model =
     , cardioversion = 0
     , medications = medicationList
     , calculated = NotCalc
+    , indicatieSelect = []
     , mdl = MDL.model
     }
 
@@ -174,10 +178,10 @@ setAge a age model =
             if n >= zero_age then
                 case a of
                     Year ->
-                        { model | age = n + model.month / 12, year = n }
+                        { model | age = n + model.month / 12, year = n, calcWeight = True }
 
                     Month ->
-                        { model | age = model.year + n / 12, month = n }
+                        { model | age = model.year + n / 12, month = n, calcWeight = True }
             else
                 model
 
@@ -186,18 +190,29 @@ setAge a age model =
 
 
 setWeight : String -> Model -> Model
-setWeight weight model =
+setWeight txt model =
     let
         model_ =
-            case String.toFloat weight of
+            case String.toFloat txt of
                 Ok n ->
                     if n >= min_weight && n <= max_weight then
-                        { model | weight = n, calcWeight = False }
+                        { model | weight = n, weightText = txt, calcWeight = False }
                     else
-                        model
+                        { model
+                            | weight = 0
+                            , weightText = txt
+                            , calcWeight = False
+                        }
 
                 Err _ ->
-                    model
+                    if model.weight == 0 || txt == "" then
+                        { model
+                            | weight = 0
+                            , weightText = ""
+                            , calcWeight = False
+                        }
+                    else
+                        model
     in
         model_
 
@@ -246,11 +261,15 @@ calcWeight model =
             if model.age == no_age then
                 model
             else if model.age == zero_age then
-                { model | weight = age_zero_weight }
+                { model | weight = age_zero_weight, weightText = toString age_zero_weight }
             else if model.age > zero_age && model.age <= half_age then
-                { model | weight = age_6mo_weight }
+                { model | weight = age_6mo_weight, weightText = toString age_6mo_weight }
             else
-                { model | weight = model.age * 2.5 + 8 }
+                let
+                    w =
+                        model.age * 2.5 + 8
+                in
+                    { model | weight = w, weightText = toString w }
     else
         model
 
@@ -309,15 +328,15 @@ calcEpinephrine : Model -> Model
 calcEpinephrine model =
     let
         iv =
-            calcMinMax 0.01 0.5 (\n -> 0.01 * n |> roundBy 0.01) model.weight
-
+            calcDoseVol model.weight 0.01 0.1 0.01 0.5
         tr =
-            calcMinMax 0.1 5 (\n -> 0.1 * n |> roundBy 0.1) model.weight
+            calcDoseVol model.weight 0.1 0.1 0.1 5
     in
-        { model
-            | epinephrineIV = ( iv, iv * 10, iv )
-            , epinephrineTR = ( tr, tr * 10, tr )
-        }
+        Debug.log "calcEpi"
+            { model
+                | epinephrineIV = ( iv |> Tuple.first, iv |> Tuple.second, (iv |> Tuple.second) / 10 )
+                , epinephrineTR = ( tr |> Tuple.first, tr |> Tuple.second, (tr |> Tuple.second) / 10 )
+            }
 
 
 calcFluidBolus : Model -> Model
@@ -392,6 +411,8 @@ calculate mdl =
     if mdl.age == no_age then
         model
             |> (setCalculated False)
+    else if mdl.weight == 0 && not mdl.calcWeight then
+        mdl
     else
         mdl
             |> calcWeight
@@ -473,9 +494,9 @@ printEpinephrine e r =
             ( d, s1, s2 ) =
                 e
         in
-            ( (US.fixPrecision 1 d  ++ " mg" ++ " " ++ r)
-            , (US.fixPrecision 1 s1  ++ " ml van 0,1 mg/ml (1:10.000) of ")
-                ++ (US.fixPrecision 1 s2  ++ " ml van 1 mg/ml (1:1000)")
+            ( (US.fixPrecision 2 d ++ " mg" ++ " " ++ r)
+            , (toString s1 ++ " ml van 0,1 mg/ml (1:10.000) of ")
+                ++ (toString s2 ++ " ml van 1 mg/ml (1:1000)")
             )
 
 

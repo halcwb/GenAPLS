@@ -6,12 +6,14 @@
     "source-directories": [
         "src",
         "src/Util",
-        "src/Model"
+        "src/Model",
+        "vendor",
+        "vendor/elm-mdl",
+        "vendor/elm-mdl/src"
     ],
     "exposed-modules": [],
     "dependencies": {
         "cuducos/elm-format-number": "4.0.2 <= v < 5.0.0",
-        "debois/elm-mdl": "8.1.0 <= v < 9.0.0",
         "elm-community/elm-time": "1.0.7 <= v < 2.0.0",
         "elm-community/string-extra": "1.4.0 <= v < 2.0.0",
         "elm-lang/core": "5.1.1 <= v < 6.0.0",
@@ -20,7 +22,9 @@
         "elm-lang/navigation": "2.1.0 <= v < 3.0.0",
         "elm-lang/virtual-dom": "2.0.4 <= v < 3.0.0",
         "evancz/url-parser": "2.0.1 <= v < 3.0.0",
-        "rundis/elm-bootstrap": "3.0.0 <= v < 4.0.0"
+        "debois/elm-dom": "1.2.3 <= v < 2.0.0",
+        "elm-lang/mouse": "1.0.1 <= v < 2.0.0",
+        "elm-lang/window": "1.0.1 <= v < 2.0.0"
     },
     "elm-version": "0.18.0 <= v < 0.19.0"
 }
