@@ -1,11 +1,9 @@
 Features:
-- add navigation query for age and weight
-- make categories selectable
-- add infusion/bolus type dose calculations
 - add standard solutions
-- add dose column
+- add dilutions
+- add time
+- add advice/normal values
+- add links
 
 Technical:
-- add tests
-- switch to elm bootstrap
 - find out how to use external components

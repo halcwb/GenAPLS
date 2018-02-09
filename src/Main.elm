@@ -18,8 +18,9 @@ import VirtualDom
 import Json.Encode as Encode
 import Material.Footer as Footer
 import Material.Menu as Menu
-import Material.Icon as Icon
+
 import Util.DomUtils exposing (..)
+import Util.Utils exposing (eqs)
 import Util.FixPrecision exposing (fixPrecision)
 import Model.Medication as D exposing (..)
 import Model.Model as M exposing (..)
@@ -132,14 +133,6 @@ stylesheetLink url =
 view : Model -> Html Msg
 view model =
     let
-        eqs x1 x2 =
-            x1 == x2
-
-        checkmark x =
-            if x then
-                Icon.view "check" [ Options.css "width" "40px" ]
-            else
-                Options.span [ Options.css "width" "40px" ] []
 
         numToString n =
             if model.age < 0 then

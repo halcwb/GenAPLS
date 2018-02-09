@@ -132,13 +132,18 @@ medicationDefs =
     , ( "intubatie", "atropine", 0.02, 0.1, 0.5, 0.5, "mg", "" )
     , ( "antidota", "flumazine", 0.02, 0, 0.3, 0.1, "mg", "" )
     , ( "antidota", "naloxon", 0.01, 0, 0.5, 0.02, "mg", "" )
+    , ( "elektrolyten", "kaliumchloride 7,4%", 0.5, 0, 5, 1.0, "mmol", "" )
+    , ( "elektrolyten", "calciumchloride 10%", 0.12, 0, 5, 0.68, "mmol", "" )
+    , ( "elektrolyten", "magnesiumchloride 10%", 0.08, 0, 5, 0.5, "mmol", "" )
     , ( "antiarrythmica", "amiodarone", 5, 0, 300, 50, "mg", "" )
-    , ( "antiarrythmica", "calciumchloride 10%", 0.12, 0, 5, 0.68, "mmol", "" )
     , ( "anticonvulsiva", "diazepam", 0.5, 0, 10, 2, "mg", "" )
     , ( "anticonvulsiva", "fenytoine", 20, 0, 1500, 50, "mg", "" )
     , ( "anticonvulsiva", "midazolam", 0.1, 0, 10, 5, "mg", "" )
-    , ( "diversen", "prednisolon", 1, 0, 25, 12.5, "mg", "" )
-    , ( "diversen", "mannitol 15%", 0.5, 0, 50, 0.15, "gram", "" )
+    , ( "astma", "prednisolon", 2, 0, 25, 12.5, "mg", "" )
+    , ( "astma", "magnesiumsulfaat 16%", 40, 0, 0, 160, "mg", "" )
+    , ( "astma", "magnesiumsulfaat 50%", 40, 0, 0, 500, "mg", "" )
+    , ( "astma", "salbutamol oplaad", 15, 0, 0, 500, "microg", "" )
+    , ( "hersenoedeem", "mannitol 15%", 0.5, 0, 50, 0.15, "gram", "" )
     ]
 
 
