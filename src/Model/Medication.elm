@@ -4,7 +4,7 @@ import FormatNumber exposing (..)
 import String.Extra exposing (replace)
 import Util.FixPrecision exposing (fixPrecision)
 import Util.Locals exposing (..)
-import Util.FloatUtils exposing (roundBy, calcDoseVol)
+import Util.FloatUtils exposing (roundBy, calcDoseVol, printVolume)
 
 
 type alias Bolus =
@@ -53,13 +53,10 @@ create ( cat, name, dosePerKg, min, max, conc, unit, rem ) =
 
 printVolume : Bolus -> String
 printVolume med =
-    let fix =
-      if med.volume >= 1 then fixPrecision 2 else fixPrecision 1
-    in
       if med.volume == 0 then
           ""
       else
-           fix med.volume
+           Util.FloatUtils.printVolume med.volume
               ++ " "
               ++ "ml"
 

@@ -131,22 +131,29 @@ model =
 init : Navigation.Location -> ( Model, Cmd msg )
 init location =
     let
-        age =
+        years =
             case
                 location.search
                     |> parseParams
-                    |> Dict.get "age"
+                    |> Dict.get "years"
             of
                 Just a ->
-                    case a |> String.toFloat of
-                        Ok af ->
-                            af
-
-                        Err _ ->
-                            no_age
+                    a
 
                 Nothing ->
-                    no_age
+                    ""
+
+        months =
+            case
+                location.search
+                    |> parseParams
+                    |> Dict.get "months"
+            of
+                Just a ->
+                    a
+
+                Nothing ->
+                    ""
 
         wght =
             case
@@ -161,8 +168,15 @@ init location =
                     ""
 
         initModel =
-            { model | age = age }
-                |> setWeight wght
+            if wght == "" then
+                model
+                    |> setAge Year years
+                    |> setAge Month months
+            else
+                model
+                    |> setAge Year years
+                    |> setAge Month months
+                    |> setWeight wght
     in
         ( initModel |> calculate, Cmd.none )
 
@@ -329,6 +343,7 @@ calcEpinephrine model =
     let
         iv =
             calcDoseVol model.weight 0.01 0.1 0.01 0.5
+
         tr =
             calcDoseVol model.weight 0.1 0.1 0.1 5
     in
@@ -495,8 +510,8 @@ printEpinephrine e r =
                 e
         in
             ( (US.fixPrecision 2 d ++ " mg" ++ " " ++ r)
-            , (toString s1 ++ " ml van 0,1 mg/ml (1:10.000) of ")
-                ++ (toString s2 ++ " ml van 1 mg/ml (1:1000)")
+            , (Util.FloatUtils.printVolume s1 ++ " ml van 0,1 mg/ml (1:10.000) of ")
+                ++ (Util.FloatUtils.printVolume s2 ++ " ml van 1 mg/ml (1:1000)")
             )
 
 

@@ -1,5 +1,6 @@
-module Util.FloatUtils exposing (roundBy, roundBy0_5, calcDoseVol)
+module Util.FloatUtils exposing (roundBy, roundBy0_5, calcDoseVol, printVolume)
 
+import Util.FixPrecision exposing (fixPrecision)
 
 roundBy : Float -> Float -> Float
 roundBy s n =
@@ -38,3 +39,8 @@ calcDoseVol kg dosePerKg conc min max =
                 v |> roundBy 0.1
     in
         ( v_ * conc, v_ )
+
+
+printVolume : Float -> String
+printVolume v =
+    if v >= 1 then fixPrecision 2 v else fixPrecision 1 v
