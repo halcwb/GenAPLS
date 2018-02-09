@@ -2,14 +2,16 @@ module Model.Model exposing (..)
 
 import FormatNumber exposing (format)
 import Model.Medication exposing (..)
-import Util.FixPrecision as US exposing (fixPrecision)
-import Util.FloatUtils exposing (roundBy, calcDoseVol)
-import Util.Locals exposing (..)
-import Util.ListUtils exposing (findNearestMax)
 import Navigation
 import Dict exposing (Dict)
 import Http
-import Material as MDL exposing (Model)
+import Material exposing (Model)
+import Component.CheckMenu as CheckMenu
+import Util.FixPrecision as US exposing (fixPrecision)
+import Util.FloatUtils exposing (roundBy, calcDoseVol)
+import Util.Locals exposing (..)
+import Util.ListUtils exposing (findNearestMax, removeDuplicates)
+import Util.Utils exposing (eqs)
 
 
 -- Constants
@@ -99,9 +101,26 @@ type alias Model =
     , cardioversion : Float
     , medications : List Bolus
     , calculated : Calculated
-    , indicatieSelect : List String
-    , mdl : MDL.Model
+    , indicatieSelect : CheckMenu.Model
+    , mdl : Material.Model
     }
+
+
+checkMenuModel : CheckMenu.Model
+checkMenuModel =
+    let
+        inds =
+            medicationList
+                |> List.map .category
+                |> removeDuplicates
+
+        sels =
+            []
+
+        all =
+            "alles"
+    in
+        CheckMenu.Model all inds sels
 
 
 model : Model
@@ -123,8 +142,8 @@ model =
     , cardioversion = 0
     , medications = medicationList
     , calculated = NotCalc
-    , indicatieSelect = []
-    , mdl = MDL.model
+    , indicatieSelect = checkMenuModel
+    , mdl = Material.model
     }
 
 
@@ -570,3 +589,16 @@ toKeyValuePair segment =
 
         _ ->
             Nothing
+
+
+
+-- Update
+
+
+update : String -> Model -> Model
+update s model =
+    let
+        selmodel =
+            CheckMenu.update s model.indicatieSelect
+    in
+        { model | indicatieSelect = selmodel }

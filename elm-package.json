@@ -7,6 +7,7 @@
         "src",
         "src/Util",
         "src/Model",
+        "src/Component",
         "vendor",
         "vendor/elm-mdl",
         "vendor/elm-mdl/src"

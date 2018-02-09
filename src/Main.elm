@@ -1,12 +1,7 @@
 module Main exposing (..)
 
--- import FormatNumber exposing (format)
-
 import Html exposing (Attribute, Html, button, div, input, p, text, h1, h2, h3, h4)
 import Html.Attributes exposing (..)
-import Model.Medication as D exposing (..)
-import Model.Model as M exposing (..)
-import Util.DomUtils exposing (..)
 import Navigation
 import Material
 import Material.Color as Color
@@ -16,7 +11,6 @@ import Material.Options as Options
 import Material.Layout as Layout
 import Material.Textfield as Textfield
 import Material.Table as Table
-import Util.FixPrecision exposing (fixPrecision)
 import Material.Typography as Typography
 import Material.Select as Select
 import Material.Dropdown.Item as Item
@@ -25,6 +19,11 @@ import Json.Encode as Encode
 import Material.Footer as Footer
 import Material.Menu as Menu
 import Material.Icon as Icon
+import Util.DomUtils exposing (..)
+import Util.FixPrecision exposing (fixPrecision)
+import Model.Medication as D exposing (..)
+import Model.Model as M exposing (..)
+import Component.CheckMenu as CheckMenu
 
 
 -- Constants
@@ -104,15 +103,12 @@ update msg model =
             , Cmd.none
             )
 
-        SelectIndicatie ind ->
-            ( if ind == "alles" then
-                { model | indicatieSelect = [] }
-              else if model.indicatieSelect |> List.any (\x -> x == ind) then
-                { model | indicatieSelect = model.indicatieSelect |> List.filter (\x -> x /= ind) }
-              else
-                { model | indicatieSelect = model.indicatieSelect |> List.append [ ind ] }
-            , Cmd.none
-            )
+        SelectIndicatie s ->
+            let
+                model_ =
+                    M.update s model
+            in
+                ( model_, Cmd.none )
 
         Mdl msg_ ->
             Material.update Mdl msg_ model
@@ -175,31 +171,10 @@ view model =
 
         indicatie =
             Menu.render Mdl
-                [ 0 ]
+                []
                 model.mdl
                 [ Menu.bottomLeft ]
-                [ Item.item
-                    [ Item.onSelect (SelectIndicatie "alles") ]
-                    [ checkmark (model.indicatieSelect |> List.isEmpty), text "Alles" ]
-                , Item.item
-                    [ Item.onSelect (SelectIndicatie "reanimatie") ]
-                    [ checkmark (model.indicatieSelect |> List.any (eqs "reanimatie")), text "Reanimatie" ]
-                , Item.item
-                    [ Item.onSelect (SelectIndicatie "intubatie") ]
-                    [ checkmark (model.indicatieSelect |> List.any (eqs "intubatie")), text "Intubatie" ]
-                , Item.item
-                    [ Item.onSelect (SelectIndicatie "antidota") ]
-                    [ checkmark (model.indicatieSelect |> List.any (eqs "antidota")), text "Antidota" ]
-                , Item.item
-                    [ Item.onSelect (SelectIndicatie "antiarrythmica") ]
-                    [ checkmark (model.indicatieSelect |> List.any (eqs "antiarrythmica")), text "Antiarrythmica" ]
-                , Item.item
-                    [ Item.onSelect (SelectIndicatie "anticonvulsiva") ]
-                    [ checkmark (model.indicatieSelect |> List.any (eqs "anticonvulsiva")), text "Anticonvulsiva" ]
-                , Item.item
-                    [ Item.onSelect (SelectIndicatie "diversen") ]
-                    [ checkmark (model.indicatieSelect |> List.any (eqs "diversen")), text "Diversen" ]
-                ]
+                (CheckMenu.view SelectIndicatie model.indicatieSelect)
 
         createTh s1 s2 s3 s4 =
             Table.thead []
@@ -302,7 +277,7 @@ view model =
              ]
                 ++ List.map (\m -> ( m.category, createTr5 m emptyString (\_ -> m.category) (\_ -> m.name) (printFst D.printDoseVolume) (printSec D.printDoseVolume) )) model.medications
             )
-                |> List.filter (\( ind, _ ) -> (model.indicatieSelect |> List.isEmpty) || (model.indicatieSelect |> List.any (eqs ind)))
+                |> List.filter (\( ind, _ ) -> (model.indicatieSelect.selected |> List.isEmpty) || (model.indicatieSelect.selected |> List.any (eqs ind)))
                 |> List.map Tuple.second
 
         body =

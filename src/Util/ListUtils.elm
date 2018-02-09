@@ -1,5 +1,6 @@
 module Util.ListUtils exposing (..)
 
+import Util.Utils exposing (eqs)
 
 findNearestMax : Float -> List Float -> Float
 findNearestMax n ns =
@@ -19,3 +20,13 @@ findNearestMax n ns =
                             a
                     )
                     n
+
+
+removeDuplicates : List a -> List a
+removeDuplicates xs =
+    xs
+    |> List.foldl (\x xs ->
+        if xs |> List.any (eqs x) then
+        xs
+        else [x] |> List.append xs
+    ) []
