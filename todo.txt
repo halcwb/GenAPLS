@@ -7,3 +7,5 @@ Features:
 
 Technical:
 - find out how to use external components
+- how to best organize the larger app
+s

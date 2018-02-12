@@ -1,4 +1,4 @@
-module Model.Model exposing (..)
+module Model.EmergencyList exposing (..)
 
 import FormatNumber exposing (format)
 import Model.Medication exposing (..)
@@ -11,7 +11,7 @@ import Util.FixPrecision as US exposing (fixPrecision)
 import Util.FloatUtils exposing (roundBy, calcDoseVol)
 import Util.Locals exposing (..)
 import Util.ListUtils exposing (findNearestMax, removeDuplicates)
-import Util.Utils exposing (eqs)
+import Model.Medication as Medication
 
 
 -- Constants
@@ -464,6 +464,33 @@ calculate mdl =
 
 
 -- Print
+
+
+type alias Intervention =
+    { indication : String
+    , intervention : String
+    , value : String
+    , preparation : String
+    , solution : String
+    , dose : String
+    , advice : String
+    }
+
+
+emergencyList : Model -> List Intervention
+emergencyList model =
+    ([ Intervention "reanimatie" "tube maat" (printTubeSize model) "" "" "" ""
+     , Intervention "reanimatie" "tube lengte oraal" (printTubeLengthOral model) "" "" "" ""
+     , Intervention "reanimatie" "tube lengte nasaal" (printTubeLengthNasal model) "" "" "" ""
+     , Intervention "reanimatie" "epinephrine iv/io" (model |> printEpinephrineIV >> Tuple.first) (model |> printEpinephrineIV >> Tuple.second) "" "" ""
+     , Intervention "reanimatie" "epinephrine tracheaal" (model |> printEpinephrineTR >> Tuple.first) (model |> printEpinephrineTR >> Tuple.second) "" "" ""
+     , Intervention "reanimatie" "vaat vulling" (model |> printFluidBolus >> Tuple.first) (model |> printFluidBolus >> Tuple.second) "" "" ""
+     , Intervention "reanimatie" "defibrillatie" (model |> printDefibrillation >> Tuple.first) (model |> printDefibrillation >> Tuple.second) "" "" ""
+     , Intervention "reanimatie" "cardioversie" (model |> printCardioversion |> Tuple.first) (model |> printCardioversion >> Tuple.second) "" "" ""
+     ]
+        ++ List.map (\m -> Intervention m.category m.name (m |> Medication.printDoseVolume >> Tuple.first) (m |> Medication.printDoseVolume >> Tuple.second) "" "" "") model.medications
+    )
+        |> List.filter (\m -> (model.indicatieSelect.selected |> List.isEmpty) || (model.indicatieSelect.selected |> List.any ((==) m.indication)))
 
 
 printAge : Model -> String
