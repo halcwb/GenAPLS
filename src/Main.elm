@@ -123,45 +123,6 @@ update msg model =
 
 
 
--- Helper Functions
-
-
-numToString : Model -> a -> String
-numToString model n =
-    if model.age < 0 then
-        ""
-    else
-        toString n
-
-
-header : Html msg
-header =
-    h2 [ style [ ( "margin", "50px" ) ] ] [ text "Pediatrische Noodlijst Berekeningen" ]
-
-
-emptyString : a -> String
-emptyString =
-    (\_ -> "")
-
-
-printFst : (a -> ( b, a2 )) -> a -> b
-printFst f m =
-    m |> f |> Tuple.first
-
-
-printSec : (a -> ( a1, String )) -> a -> String
-printSec f m =
-    let
-        s =
-            m |> f |> Tuple.second
-    in
-        if s == "" then
-            s
-        else
-            "= " ++ (m |> f |> Tuple.second)
-
-
-
 -- View Components
 
 
@@ -252,6 +213,7 @@ weightInput model =
         []
 
 
+emergencyList : Model -> Html Msg
 emergencyList model =
     let
         createTd s =
@@ -302,6 +264,20 @@ emergencyList model =
 view : Model -> Html Msg
 view model =
     let
+        --
+        -- Helper Functions
+        --
+        numToString : Model -> a -> String
+        numToString model n =
+            if model.age < 0 then
+                ""
+            else
+                toString n
+
+        header : Html msg
+        header =
+            h2 [ style [ ( "margin", "50px" ) ] ] [ text "Pediatrische Noodlijst Berekeningen" ]
+
         body =
             div [ style [ ( "margin", "50px" ) ] ]
                 [ div []

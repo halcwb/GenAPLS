@@ -53,12 +53,12 @@ create ( cat, name, dosePerKg, min, max, conc, unit, rem ) =
 
 printVolume : Bolus -> String
 printVolume med =
-      if med.volume == 0 then
-          ""
-      else
-           Util.FloatUtils.printVolume med.volume
-              ++ " "
-              ++ "ml"
+    if med.volume == 0 then
+        ""
+    else
+        Util.FloatUtils.printVolume med.volume
+            ++ " "
+            ++ "ml"
 
 
 printDose : Bolus -> String
@@ -66,7 +66,9 @@ printDose med =
     if med.dose == 0 then
         ""
     else
-        fixPrecision 2 med.dose ++ " " ++ med.unit
+        fixPrecision 2 med.dose
+            ++ " "
+            ++ med.unit
 
 
 printDoseVolume : Bolus -> ( String, String )
@@ -108,7 +110,8 @@ print med =
 calculate : Float -> Bolus -> Bolus
 calculate kg med =
     let
-        ( d, v ) = calcDoseVol kg med.dosePerKg med.conc med.min med.max
+        ( d, v ) =
+            calcDoseVol kg med.dosePerKg med.conc med.min med.max
     in
         { med
             | dose = d
@@ -116,9 +119,7 @@ calculate kg med =
         }
 
 
-
-medicationDefs :
-    List ( String, String, Float, Float, Float, Float, String, String )
+medicationDefs : List ( String, String, Float, Float, Float, Float, String, String )
 medicationDefs =
     [ ( "reanimatie", "glucose 10%", 0.2, 0, 25, 0.1, "gram", "" )
     , ( "reanimatie", "NaBic 8,4", 0.5, 0, 50, 1, "mmol", "" )
@@ -150,11 +151,3 @@ medicationDefs =
 medicationList : List Bolus
 medicationList =
     medicationDefs |> List.map create
-
-
-
-
-
-
-
-

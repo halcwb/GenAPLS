@@ -479,19 +479,35 @@ type alias Intervention =
 
 emergencyList : Model -> List Intervention
 emergencyList model =
-    ([ Intervention "reanimatie" "tube maat" (printTubeSize model) "" "" "" ""
-     , Intervention "reanimatie" "tube lengte oraal" (printTubeLengthOral model) "" "" "" ""
-     , Intervention "reanimatie" "tube lengte nasaal" (printTubeLengthNasal model) "" "" "" ""
-     , Intervention "reanimatie" "epinephrine iv/io" (model |> printEpinephrineIV >> Tuple.first) (model |> printEpinephrineIV >> Tuple.second) "" "" ""
-     , Intervention "reanimatie" "epinephrine tracheaal" (model |> printEpinephrineTR >> Tuple.first) (model |> printEpinephrineTR >> Tuple.second) "" "" ""
-     , Intervention "reanimatie" "vaat vulling" (model |> printFluidBolus >> Tuple.first) (model |> printFluidBolus >> Tuple.second) "" "" ""
-     , Intervention "reanimatie" "defibrillatie" (model |> printDefibrillation >> Tuple.first) (model |> printDefibrillation >> Tuple.second) "" "" ""
-     , Intervention "reanimatie" "cardioversie" (model |> printCardioversion |> Tuple.first) (model |> printCardioversion >> Tuple.second) "" "" ""
-     ]
-        ++ List.map (\m -> Intervention m.category m.name (m |> Medication.printDoseVolume >> Tuple.first) (m |> Medication.printDoseVolume >> Tuple.second) "" "" "") model.medications
-    )
-        |> List.filter (\m -> (model.indicatieSelect.selected |> List.isEmpty) || (model.indicatieSelect.selected |> List.any ((==) m.indication)))
-
+    let meds =
+        let
+            dosePerKg m =
+                m.dose / model.weight
+                |> fixPrecision 2
+            dose m =
+                (m |> Medication.printDoseVolume >> Tuple.first)
+                    ++ " ("
+                    ++ dosePerKg m
+                    ++ " "
+                    ++ m.unit
+                    ++ "/kg)"
+            volume m =
+                m |> Medication.printDoseVolume >> Tuple.second
+        in
+            List.map (\m -> Intervention m.category m.name (m |> dose) (m |> volume) "" "" "") model.medications
+    in
+        ([ Intervention "reanimatie" "tube maat" (printTubeSize model) "" "" "" ""
+         , Intervention "reanimatie" "tube lengte oraal" (printTubeLengthOral model) "" "" "" ""
+         , Intervention "reanimatie" "tube lengte nasaal" (printTubeLengthNasal model) "" "" "" ""
+         , Intervention "reanimatie" "epinephrine iv/io" (model |> printEpinephrineIV >> Tuple.first) (model |> printEpinephrineIV >> Tuple.second) "" "" ""
+         , Intervention "reanimatie" "epinephrine tracheaal" (model |> printEpinephrineTR >> Tuple.first) (model |> printEpinephrineTR >> Tuple.second) "" "" ""
+         , Intervention "reanimatie" "vaat vulling" (model |> printFluidBolus >> Tuple.first) (model |> printFluidBolus >> Tuple.second) "" "" ""
+         , Intervention "reanimatie" "defibrillatie" (model |> printDefibrillation >> Tuple.first) (model |> printDefibrillation >> Tuple.second) "" "" ""
+         , Intervention "reanimatie" "cardioversie" (model |> printCardioversion |> Tuple.first) (model |> printCardioversion >> Tuple.second) "" "" ""
+         ]
+            ++ meds
+        )
+            |> List.filter (\m -> (model.indicatieSelect.selected |> List.isEmpty) || (model.indicatieSelect.selected |> List.any ((==) m.indication)))
 
 printAge : Model -> String
 printAge model =
