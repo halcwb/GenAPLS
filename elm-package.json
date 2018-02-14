@@ -6,7 +6,7 @@
     "source-directories": [
         "src",
         "src/Util",
-        "src/Model",
+        "src/EmergencyList",
         "src/Component",
         "vendor",
         "vendor/elm-mdl",

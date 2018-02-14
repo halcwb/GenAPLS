@@ -28,7 +28,7 @@ import Material.Menu as Menu
 
 import Util.DomUtils exposing (..)
 import Util.FixPrecision exposing (fixPrecision)
-import Model.EmergencyList as EmergencyList exposing (..)
+import EmergencyList.EmergencyList as EmergencyList exposing (..)
 import Component.CheckMenu as CheckMenu
 
 
