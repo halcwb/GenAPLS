@@ -472,42 +472,49 @@ type alias Intervention =
     , value : String
     , preparation : String
     , solution : String
-    , dose : String
     , advice : String
     }
 
 
 emergencyList : Model -> List Intervention
 emergencyList model =
-    let meds =
-        let
-            dosePerKg m =
-                m.dose / model.weight
-                |> fixPrecision 2
-            dose m =
-                (m |> Medication.printDoseVolume >> Tuple.first)
-                    ++ " ("
-                    ++ dosePerKg m
-                    ++ " "
-                    ++ m.unit
-                    ++ "/kg)"
-            volume m =
-                m |> Medication.printDoseVolume >> Tuple.second
-        in
-            List.map (\m -> Intervention m.category m.name (m |> dose) (m |> volume) "" "" "") model.medications
+    let
+        meds =
+            let
+                dosePerKg m =
+                    m.dose
+                        / model.weight
+                        |> fixPrecision 1
+
+                dose m =
+                    (m |> Medication.printDoseVolume >> Tuple.first)
+                        ++ " ("
+                        ++ dosePerKg m
+                        ++ " "
+                        ++ m.unit
+                        ++ "/kg)"
+
+                volume m =
+                    m |> Medication.printDoseVolume >> Tuple.second
+
+                advice m =
+                    m |> Medication.printAdvice
+            in
+                List.map (\m -> Intervention m.category m.name (m |> dose) (m |> volume) "" (m |> advice)) model.medications
     in
-        ([ Intervention "reanimatie" "tube maat" (printTubeSize model) "" "" "" ""
-         , Intervention "reanimatie" "tube lengte oraal" (printTubeLengthOral model) "" "" "" ""
-         , Intervention "reanimatie" "tube lengte nasaal" (printTubeLengthNasal model) "" "" "" ""
-         , Intervention "reanimatie" "epinephrine iv/io" (model |> printEpinephrineIV >> Tuple.first) (model |> printEpinephrineIV >> Tuple.second) "" "" ""
-         , Intervention "reanimatie" "epinephrine tracheaal" (model |> printEpinephrineTR >> Tuple.first) (model |> printEpinephrineTR >> Tuple.second) "" "" ""
-         , Intervention "reanimatie" "vaat vulling" (model |> printFluidBolus >> Tuple.first) (model |> printFluidBolus >> Tuple.second) "" "" ""
-         , Intervention "reanimatie" "defibrillatie" (model |> printDefibrillation >> Tuple.first) (model |> printDefibrillation >> Tuple.second) "" "" ""
-         , Intervention "reanimatie" "cardioversie" (model |> printCardioversion |> Tuple.first) (model |> printCardioversion >> Tuple.second) "" "" ""
+        ([ Intervention "reanimatie" "tube maat" (printTubeSize model) "" "" "4 + Leeftijd / 4"
+         , Intervention "reanimatie" "tube lengte oraal" (printTubeLengthOral model) "" "" "12 + Leeftijd / 2"
+         , Intervention "reanimatie" "tube lengte nasaal" (printTubeLengthNasal model) "" "" "15 + Leeftijd / 2"
+         , Intervention "reanimatie" "epinephrine iv/io" (model |> printEpinephrineIV >> Tuple.first) (model |> printEpinephrineIV >> Tuple.second) "" "0,01 mg/kg iv"
+         , Intervention "reanimatie" "epinephrine tracheaal" (model |> printEpinephrineTR >> Tuple.first) (model |> printEpinephrineTR >> Tuple.second) "" "0,1 mg/kg trach"
+         , Intervention "reanimatie" "vaat vulling" (model |> printFluidBolus >> Tuple.first) (model |> printFluidBolus >> Tuple.second) "" "20 ml/kg"
+         , Intervention "reanimatie" "defibrillatie" (model |> printDefibrillation >> Tuple.first) (model |> printDefibrillation >> Tuple.second) "" "4 Joule/kg"
+         , Intervention "reanimatie" "cardioversie" (model |> printCardioversion |> Tuple.first) (model |> printCardioversion >> Tuple.second) "" "2 Joule/kg"
          ]
             ++ meds
         )
             |> List.filter (\m -> (model.indicatieSelect.selected |> List.isEmpty) || (model.indicatieSelect.selected |> List.any ((==) m.indication)))
+
 
 printAge : Model -> String
 printAge model =
@@ -562,16 +569,19 @@ printTubeLengthNasal model =
     printTubeLength model.tubeLengthNasal
 
 
-printEpinephrine : ( Float, Float, Float ) -> String -> ( String, String )
-printEpinephrine e r =
+printEpinephrine : Float -> ( Float, Float, Float ) -> String -> ( String, String )
+printEpinephrine w e r =
     if e == ( 0, 0, 0 ) then
         ( "", "" )
     else
         let
             ( d, s1, s2 ) =
                 e
+
+            dosePerKg =
+                d / w |> fixPrecision 2
         in
-            ( (US.fixPrecision 2 d ++ " mg" ++ " " ++ r)
+            ( (US.fixPrecision 2 d ++ " mg" ++ " " ++ r ++ "(" ++ dosePerKg ++ " mg/kg)")
             , (Util.FloatUtils.printVolume s1 ++ " ml van 0,1 mg/ml (1:10.000) of ")
                 ++ (Util.FloatUtils.printVolume s2 ++ " ml van 1 mg/ml (1:1000)")
             )
@@ -579,12 +589,12 @@ printEpinephrine e r =
 
 printEpinephrineIV : Model -> ( String, String )
 printEpinephrineIV model =
-    printEpinephrine model.epinephrineIV ""
+    printEpinephrine model.weight model.epinephrineIV ""
 
 
 printEpinephrineTR : Model -> ( String, String )
 printEpinephrineTR model =
-    printEpinephrine model.epinephrineTR ""
+    printEpinephrine model.weight model.epinephrineTR ""
 
 
 printFluidBolus : Model -> ( String, String )

@@ -30,7 +30,7 @@ calcDoseVol kg dosePerKg conc min max =
                 d
 
         v =
-            d / conc
+            d_ / conc
 
         v_ =
             if v >= 10 then

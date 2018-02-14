@@ -27,9 +27,7 @@ import Material.Menu as Menu
 -- Modules
 
 import Util.DomUtils exposing (..)
-import Util.Utils exposing (eqs)
 import Util.FixPrecision exposing (fixPrecision)
-import Model.Medication as Medication exposing (..)
 import Model.EmergencyList as EmergencyList exposing (..)
 import Component.CheckMenu as CheckMenu
 
@@ -228,7 +226,6 @@ emergencyList model =
                 , createEl Table.th "Bereiding" identity
                 , createEl Table.th "" identity
                 , createEl Table.th "Advies" identity
-                , createEl Table.th "" identity
                 ]
 
         tbody =
@@ -243,7 +240,6 @@ emergencyList model =
                             , m.value
                             , m.preparation
                             , m.solution
-                            , m.dose
                             , m.advice
                             ]
                                 |> List.map createTd
@@ -292,6 +288,11 @@ view model =
                     { left =
                         Footer.left []
                             [ Footer.logo [] [ Footer.html <| text "Informedica 2018" ]
+                            , Footer.links []
+                                [ Footer.linkItem [ Footer.href "http://github.com/halcwb/GenAPLS.git" ] [ Footer.html <| text "GenAPLS broncode" ]
+                                , Footer.linkItem [ Footer.href "https://www.eenheidintensievezorg.nl/" ] [ Footer.html <| text "Eenheid Intensieve Zorg" ]
+                                , Footer.linkItem [ Footer.href "https://kinderformularium.nl/" ] [ Footer.html <| text "Kinder Formularium" ]
+                                ]
                             ]
                     , right =
                         Footer.right []
