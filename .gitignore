@@ -16,7 +16,7 @@
 
 # Add source files
 !src/
-!src/Model/
+!src/EmergencyList/
 !src/Util/
 !src/Component/
 

@@ -31,14 +31,17 @@ type Styles
     = Main
     | Header
     | Input
+    | Label
     | Select
     | Button
 
 
+roboto : List Style.Font
 roboto =
     [ Font.importUrl { url = "https://fonts.googleapis.com/css?family=Roboto", name = "Roboto" } ]
 
 
+stylesheet : Style.StyleSheet Styles variation
 stylesheet =
     Style.styleSheet
         [ Style.style Main
@@ -53,7 +56,8 @@ stylesheet =
             [ Border.rounded 5
             , Color.text Color.white
             , Color.background Color.teal500
-            , Font.size 16
+            , Font.size 14
+            , Font.bold
             ]
         , Style.style Input
             [ Font.size 16
@@ -62,6 +66,10 @@ stylesheet =
         , Style.style Select
             [ Color.border Color.teal100
             , Border.bottom 1
+            ]
+        , Style.style Label
+            [ Color.text Color.teal400
+            , Font.size 14
             ]
         ]
 
@@ -108,6 +116,7 @@ type alias Model =
     }
 
 
+emptyModel : Model
 emptyModel =
     let
         dropDown msg =
@@ -123,14 +132,11 @@ emptyModel =
 -- Update
 
 
-type
-    Msg
-    {- = Clear
-       | UrlChange Navigation.Location
-    -}
+type Msg
     = UrlChange Navigation.Location
     | UpdateYear (Input.SelectMsg String)
     | UpdateMonth (Input.SelectMsg String)
+    | UpdateWeight String
     | Clear
 
 
@@ -155,7 +161,9 @@ update msg model =
                 emList =
                     case year of
                         Just year_ ->
-                            model.emergencyList |> EmergencyList.setAge age year_
+                            model.emergencyList
+                                |> EmergencyList.setAge age year_
+                                |> EmergencyList.calculate
 
                         Nothing ->
                             model.emergencyList
@@ -192,6 +200,15 @@ update msg model =
                 in
                     ( model_, Cmd.none )
 
+            UpdateWeight txt ->
+                let
+                    elist =
+                        setWeight txt model.emergencyList |> EmergencyList.calculate
+                in
+                    ( { model | emergencyList = elist }
+                    , Cmd.none
+                    )
+
             Clear ->
                 ( emptyModel, Cmd.none )
 
@@ -226,9 +243,6 @@ update msg model =
 view : Model -> Html Msg
 view model =
     let
-        --
-        -- Helper Functions
-        --
         numToString : Model -> a -> String
         numToString model n =
             if model.emergencyList.age < 0 then
@@ -236,13 +250,16 @@ view model =
             else
                 toString n
 
+        labelAbove s =
+            Input.labelAbove <| Element.el Label [ Attributes.alignLeft ] (Element.text s)
+
         header =
             Element.header Header [ Attributes.padding 50 ] (Element.text "Pediatrische Noodlijst Berekeningen")
 
         ageDropdown txt min max dropDown =
             Input.select Select
                 [ Attributes.padding 10 ]
-                { label = Input.labelAbove <| Element.text txt
+                { label = labelAbove txt
                 , with = dropDown
                 , max = max + 1
                 , options = []
@@ -260,6 +277,8 @@ view model =
 
         monthDropdown =
             model.monthDropdown |> ageDropdown "Leeftijd (maanden)" 0 11
+
+        printList = model.emergencyList |> EmergencyList.printEmergencyList
     in
         Element.viewport stylesheet <|
             Element.column Main
@@ -271,6 +290,23 @@ view model =
                     ]
                     [ yearDropdown
                     , monthDropdown
-                    , Element.button Button [ Events.onClick Clear, Attributes.padding 10 ] (Element.text "Verwijderen")
+                    , Input.text Input
+                        []
+                        { onChange = UpdateWeight
+                        , value = toString model.emergencyList.weight
+                        , label = labelAbove "Gewicht (kg)"
+                        , options = []
+                        }
+                    , Element.button Button [ Events.onClick Clear, Attributes.padding 15 ] (Element.text "VERWIJDER")
+                    ]
+                , Element.table Main
+                    [ Attributes.padding 50
+                    , Attributes.spacing 20
+                    ]
+                    [ Element.text "Indicatie" ::  List.map (Element.text << .indication) printList
+                    , Element.text "Interventie" ::  List.map (Element.text << .intervention) printList
+                    , Element.text "" ::  List.map (Element.text << .value) printList
+                    , Element.text "Bereiding" ::  List.map (Element.text << .preparation) printList
+                    , Element.text "Advies" ::  List.map (Element.text << .advice) printList
                     ]
                 ]
