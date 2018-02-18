@@ -20,6 +20,7 @@ import Style.Border as Border
 
 import Util.DomUtils exposing (..)
 import Util.FixPrecision exposing (fixPrecision)
+import Util.ListUtils as List
 import EmergencyList.EmergencyList as EmergencyList exposing (..)
 import Component.CheckMenu as CheckMenu
 
@@ -34,6 +35,9 @@ type Styles
     | Label
     | Select
     | Button
+    | TableHead
+    | TableRow
+    | TableRowHover
 
 
 roboto : List Style.Font
@@ -71,6 +75,24 @@ stylesheet =
             [ Color.text Color.teal400
             , Font.size 14
             ]
+        , Style.style TableHead
+            [ Color.text <| Color.rgb 158 158 158
+            , Font.size 14
+            , Font.bold
+            , Border.bottom 2
+            , Color.border <| Color.lightGray
+            ]
+        , Style.style TableRow
+            [ Color.text <| Color.rgb 33 33 33
+            , Font.size 14
+            , Border.bottom 1
+            , Color.border <| Color.lightGray
+            ]
+        , Style.style TableRowHover
+            [ Font.size 14
+            , Color.text Color.black
+            , Color.background Color.lightGray
+            ]
         ]
 
 
@@ -90,6 +112,7 @@ init location =
             { emergencyList = location |> EmergencyList.init
             , yearDropdown = dropDown UpdateYear
             , monthDropdown = dropDown UpdateMonth
+            , hoverRowIndx = 0
             }
     in
         ( model, Cmd.none )
@@ -113,6 +136,7 @@ type alias Model =
     { emergencyList : EmergencyList.Model
     , yearDropdown : Input.SelectWith String Msg
     , monthDropdown : Input.SelectWith String Msg
+    , hoverRowIndx : Int
     }
 
 
@@ -125,6 +149,7 @@ emptyModel =
         { emergencyList = EmergencyList.model
         , yearDropdown = dropDown UpdateYear
         , monthDropdown = dropDown UpdateMonth
+        , hoverRowIndx = 0
         }
 
 
@@ -138,6 +163,8 @@ type Msg
     | UpdateMonth (Input.SelectMsg String)
     | UpdateWeight String
     | Clear
+    | TableRowEnter Int
+    | TableRowLeave Int
 
 
 
@@ -212,6 +239,12 @@ update msg model =
             Clear ->
                 ( emptyModel, Cmd.none )
 
+            TableRowEnter x ->
+                ( { model | hoverRowIndx = x }, Cmd.none)
+
+            TableRowLeave x ->
+                ( { model | hoverRowIndx = 0 }, Cmd.none)
+
 
 
 --         Calculate ->
@@ -279,6 +312,27 @@ view model =
             model.monthDropdown |> ageDropdown "Leeftijd (maanden)" 0 11
 
         printList = model.emergencyList |> EmergencyList.printEmergencyList
+
+        tableHead s =
+            Element.el TableHead
+                [ Attributes.alignLeft
+                , Attributes.padding 10
+                ]
+                ( Element.text s)
+
+        tableCell s i =
+            let
+                style =
+                    if model.hoverRowIndx == i + 1 then TableRowHover else TableRow
+            in
+                Element.el
+                    style
+                    [ Attributes.alignLeft
+                    , Attributes.padding 10
+                    , Events.onMouseEnter (TableRowEnter (i + 1))
+                    , Events.onMouseLeave (TableRowLeave (i + 1))
+                    ]
+                    ( Element.text s)
     in
         Element.viewport stylesheet <|
             Element.column Main
@@ -299,14 +353,14 @@ view model =
                         }
                     , Element.button Button [ Events.onClick Clear, Attributes.padding 15 ] (Element.text "VERWIJDER")
                     ]
-                , Element.table Main
-                    [ Attributes.padding 50
-                    , Attributes.spacing 20
-                    ]
-                    [ Element.text "Indicatie" ::  List.map (Element.text << .indication) printList
-                    , Element.text "Interventie" ::  List.map (Element.text << .intervention) printList
-                    , Element.text "" ::  List.map (Element.text << .value) printList
-                    , Element.text "Bereiding" ::  List.map (Element.text << .preparation) printList
-                    , Element.text "Advies" ::  List.map (Element.text << .advice) printList
-                    ]
+                ,Element.el Main
+                    [ Attributes.padding 50 ]
+                        (Element.table Main
+                            []
+                            [ tableHead "Indicatie" ::  List.mapi (tableCell << .indication) printList
+                            , tableHead "Interventie" ::  List.mapi (tableCell << .intervention) printList
+                            , tableHead "" ::  List.mapi (tableCell << .value) printList
+                            , tableHead "Bereiding" ::  List.mapi (tableCell << .preparation) printList
+                            , tableHead "Advies" ::  List.mapi (tableCell << .advice) printList
+                            ])
                 ]
