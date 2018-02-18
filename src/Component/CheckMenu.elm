@@ -1,9 +1,6 @@
-module Component.CheckMenu exposing (Model, update, view)
+module Component.CheckMenu exposing (Model, update)
 
 import Html exposing (Html, text)
-import Material.Icon as Icon
-import Material.Dropdown.Item as Item
-import Material.Options as Options
 import Util.Utils exposing (eqs)
 
 
@@ -35,28 +32,24 @@ update s model =
 -- View
 
 
-view :
-    (String -> msg)
-    -> Model
-    -> List (Item.Model msg)
-view msg model =
-    model.items
-        |> List.map
-            (\x ->
-                Item.item
-                    [ Item.onSelect (msg x) ]
-                    [ checkmark (model.selected |> List.any (eqs x)), text x ]
-            )
-        |> List.append
-            [ Item.item
-                [ Item.onSelect (msg model.all) ]
-                [ checkmark (model.selected |> List.isEmpty), text model.all ]
-            ]
+-- view msg model =
+--     model.items
+--         |> List.map
+--             (\x ->
+--                 Item.item
+--                     [ Item.onSelect (msg x) ]
+--                     [ checkmark (model.selected |> List.any (eqs x)), text x ]
+--             )
+--         |> List.append
+--             [ Item.item
+--                 [ Item.onSelect (msg model.all) ]
+--                 [ checkmark (model.selected |> List.isEmpty), text model.all ]
+--             ]
 
 
-checkmark : Bool -> Html m
-checkmark x =
-    if x then
-        Icon.view "check" [ Options.css "width" "40px" ]
-    else
-        Options.span [ Options.css "width" "40px" ] []
+-- checkmark : Bool -> Html m
+-- checkmark x =
+--     if x then
+--         Icon.view "check" [ Options.css "width" "40px" ]
+--     else
+--         Options.span [ Options.css "width" "40px" ] []
