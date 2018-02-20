@@ -14,6 +14,7 @@ import Style as Style
 import Style.Color as Color
 import Style.Font as Font
 import Style.Border as Border
+import Json.Decode
 
 
 -- Modules
@@ -29,7 +30,8 @@ import Component.CheckMenu as CheckMenu
 
 
 type Styles
-    = Main
+    = NoStyle
+    | Main
     | Header
     | Input
     | Label
@@ -38,6 +40,10 @@ type Styles
     | TableHead
     | TableRow
     | TableRowHover
+    | Title
+    | MenuContents
+    | MenuItem
+    | MenuItemSelected
 
 
 roboto : List Style.Font
@@ -48,7 +54,8 @@ roboto =
 stylesheet : Style.StyleSheet Styles variation
 stylesheet =
     Style.styleSheet
-        [ Style.style Main
+        [ Style.style NoStyle []
+        , Style.style Main
             [ Font.typeface roboto
             ]
         , Style.style Header
@@ -77,13 +84,18 @@ stylesheet =
             ]
         , Style.style TableHead
             [ Color.text <| Color.rgb 158 158 158
-            , Font.size 14
+            , Font.size 13
             , Font.bold
             , Border.bottom 2
             , Color.border <| Color.lightGray
+            , Style.cursor "pointer"
             ]
         , Style.style TableRow
-            [ Color.text <| Color.rgb 33 33 33
+            [ Color.text <| Color.rgb 117 117 117
+
+            --             Only hovers a cell not the whole row
+            --             , Style.hover [ Color.background Color.lightGray
+            --                           ]
             , Font.size 14
             , Border.bottom 1
             , Color.border <| Color.lightGray
@@ -92,6 +104,30 @@ stylesheet =
             [ Font.size 14
             , Color.text Color.black
             , Color.background Color.lightGray
+            ]
+        , Style.style Title
+            [ Color.text <| Color.teal400
+            , Font.size 16
+            , Font.bold
+            ]
+        , Style.style MenuContents
+            [ Color.background Color.white
+            , Color.border Color.lightGray
+            , Border.all 1
+            ]
+        , Style.style MenuItem
+            [ Style.cursor "pointer"
+            , Style.hover
+                [ Color.background Color.lightGray
+                ]
+            , Color.text Color.black
+            , Font.light
+            ]
+        , Style.style MenuItemSelected
+            [ Style.cursor "pointer"
+            , Color.background Color.lightGray
+            , Color.text Color.black
+            , Font.light
             ]
         ]
 
@@ -113,6 +149,8 @@ init location =
             , yearDropdown = dropDown UpdateYear
             , monthDropdown = dropDown UpdateMonth
             , hoverRowIndx = 0
+            , counter = 0
+            , menuState = MenuClosed
             }
     in
         ( model, Cmd.none )
@@ -137,7 +175,14 @@ type alias Model =
     , yearDropdown : Input.SelectWith String Msg
     , monthDropdown : Input.SelectWith String Msg
     , hoverRowIndx : Int
+    , counter : Int
+    , menuState : MenuState
     }
+
+
+type MenuState
+    = MenuOpen
+    | MenuClosed
 
 
 emptyModel : Model
@@ -150,6 +195,8 @@ emptyModel =
         , yearDropdown = dropDown UpdateYear
         , monthDropdown = dropDown UpdateMonth
         , hoverRowIndx = 0
+        , counter = 0
+        , menuState = MenuClosed
         }
 
 
@@ -165,13 +212,24 @@ type Msg
     | Clear
     | TableRowEnter Int
     | TableRowLeave Int
+    | ToggleMenu
+    | CloseMenu
+    | SelectMenuItem String
 
 
 
---     | UpdateWeight String
---     | CheckWeight
---     | Calculate
---     | SelectIndicatie String
+{- This is a hack to ensure that
+   the model and a text input field
+   remains is sync. The model counter
+   should be updated each time the input
+   field changes through code, not by
+   user input
+-}
+
+
+updateCounter : Model -> Model
+updateCounter model =
+    { model | counter = model.counter + 1 }
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -214,7 +272,7 @@ update msg model =
                         in
                             { model | emergencyList = emList, yearDropdown = selMenu }
                 in
-                    ( model_, Cmd.none )
+                    ( model_ |> updateCounter, Cmd.none )
 
             UpdateMonth selectMsg ->
                 let
@@ -225,7 +283,7 @@ update msg model =
                         in
                             { model | emergencyList = emList, monthDropdown = selMenu }
                 in
-                    ( model_, Cmd.none )
+                    ( model_ |> updateCounter, Cmd.none )
 
             UpdateWeight txt ->
                 let
@@ -240,37 +298,43 @@ update msg model =
                 ( emptyModel, Cmd.none )
 
             TableRowEnter x ->
-                ( { model | hoverRowIndx = x }, Cmd.none)
+                ( { model | hoverRowIndx = x }, Cmd.none )
 
             TableRowLeave x ->
-                ( { model | hoverRowIndx = 0 }, Cmd.none)
+                ( { model | hoverRowIndx = 0 }, Cmd.none )
+
+            ToggleMenu ->
+                let
+                    state =
+                        case model.menuState of
+                            MenuClosed ->
+                                MenuOpen
+
+                            MenuOpen ->
+                                MenuClosed
+                in
+                    ( { model | menuState = state }, Cmd.none )
+
+            CloseMenu ->
+                ( { model | menuState = MenuClosed }, Cmd.none )
 
 
+            SelectMenuItem s ->
+                let
+                    elist =
+                        model.emergencyList |> EmergencyList.update s
+                in
+                    ({ model | emergencyList = elist }, Cmd.none )
 
---         Calculate ->
---             ( model |> EmergencyList.calculate
---             , Cmd.none
---             )
---         UpdateWeight txt ->
---             ( setWeight txt model |> EmergencyList.calculate
---             , Cmd.none
---             )
---         CheckWeight ->
---             ( if model.weight == 0 then
---                 { model | weightText = "" }
---               else
---                 model
---                     |> EmergencyList.calculate
---             , Cmd.none
---             )
---         SelectIndicatie s ->
---             let
---                 model_ =
---                     EmergencyList.update s model
---             in
---                 ( model_, Cmd.none )
--- View Components
+
 -- View
+
+
+onClickPreventDefault : msg -> Element.Attribute variation msg
+onClickPreventDefault msg =
+    Events.onWithOptions "click"
+        { preventDefault = True, stopPropagation = True }
+        (Json.Decode.succeed msg)
 
 
 view : Model -> Html Msg
@@ -311,19 +375,30 @@ view model =
         monthDropdown =
             model.monthDropdown |> ageDropdown "Leeftijd (maanden)" 0 11
 
-        printList = model.emergencyList |> EmergencyList.printEmergencyList
+        printList =
+            model.emergencyList |> EmergencyList.printEmergencyList
 
         tableHead s =
             Element.el TableHead
-                [ Attributes.alignLeft
-                , Attributes.padding 10
-                ]
-                ( Element.text s)
+                ([ Attributes.alignLeft
+                 , Attributes.padding 10
+                 ]
+                    |> List.append
+                        (if s |> String.startsWith "Indicatie" then
+                            [ onClickPreventDefault ToggleMenu ]
+                         else
+                            []
+                        )
+                )
+                (Element.text s)
 
         tableCell s i =
             let
                 style =
-                    if model.hoverRowIndx == i + 1 then TableRowHover else TableRow
+                    if model.hoverRowIndx == i + 1 then
+                        TableRowHover
+                    else
+                        TableRow
             in
                 Element.el
                     style
@@ -332,7 +407,45 @@ view model =
                     , Events.onMouseEnter (TableRowEnter (i + 1))
                     , Events.onMouseLeave (TableRowLeave (i + 1))
                     ]
-                    ( Element.text s)
+                    (Element.text s)
+
+        tableTitle =
+            if model.emergencyList.weight > 0 then
+                "Berekend op basis van gewicht: "
+                    ++ (fixPrecision 2 model.emergencyList.weight)
+                    ++ " kg"
+            else
+                ""
+
+        tableMenu s =
+            let
+                items =
+                    model.emergencyList.indicatieSelect.all :: model.emergencyList.indicatieSelect.indications
+                map item =
+                    let
+                        style =
+                            if model.emergencyList.indicatieSelect.selections |> List.any ((==) item) then
+                                MenuItemSelected
+                            else
+                                MenuItem
+                    in
+                        Element.el style [ Attributes.padding 15, onClickPreventDefault (SelectMenuItem item) ] <| Element.text item
+            in
+                case model.menuState of
+                    MenuClosed ->
+                        s ++ " ▼"
+                            |> tableHead
+
+                    MenuOpen ->
+                        s ++ " ▲"
+                            |> tableHead
+                            |> Element.below
+                                [ Element.column MenuContents
+                                    [ Attributes.padding 10, Attributes.spacing 10 ]
+                                    (items
+                                        |> List.map map
+                                    )
+                                ]
     in
         Element.viewport stylesheet <|
             Element.column Main
@@ -347,20 +460,27 @@ view model =
                     , Input.text Input
                         []
                         { onChange = UpdateWeight
-                        , value = toString model.emergencyList.weight
+                        , value = model.emergencyList.weightText
                         , label = labelAbove "Gewicht (kg)"
-                        , options = []
+                        , options = [ Input.textKey <| toString model.counter ]
                         }
                     , Element.button Button [ Events.onClick Clear, Attributes.padding 15 ] (Element.text "VERWIJDER")
                     ]
-                ,Element.el Main
-                    [ Attributes.padding 50 ]
-                        (Element.table Main
-                            []
-                            [ tableHead "Indicatie" ::  List.mapi (tableCell << .indication) printList
-                            , tableHead "Interventie" ::  List.mapi (tableCell << .intervention) printList
-                            , tableHead "" ::  List.mapi (tableCell << .value) printList
-                            , tableHead "Bereiding" ::  List.mapi (tableCell << .preparation) printList
-                            , tableHead "Advies" ::  List.mapi (tableCell << .advice) printList
-                            ])
+                , Element.paragraph Title
+                    [ Attributes.paddingLeft 50 ]
+                    [ Element.text tableTitle ]
+                , Element.el NoStyle
+                    [ Attributes.paddingLeft 50, Attributes.paddingTop 20, Attributes.paddingRight 50 ]
+                    (Element.table Main
+                        []
+                        [ ("Indicatie" |> tableMenu) :: List.mapi (tableCell << .indication) printList
+                        , tableHead "Interventie" :: List.mapi (tableCell << .intervention) printList
+                        , tableHead "" :: List.mapi (tableCell << .value) printList
+                        , tableHead "Bereiding" :: List.mapi (tableCell << .preparation) printList
+                        , tableHead "Advies" :: List.mapi (tableCell << .advice) printList
+                        ]
+                    )
+                , Element.el NoStyle
+                    [ Attributes.height (Attributes.px 50)]
+                    Element.empty
                 ]

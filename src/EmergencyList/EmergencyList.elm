@@ -4,12 +4,16 @@ import FormatNumber exposing (format)
 import Navigation
 import Dict exposing (Dict)
 import Http
+
+
 -- import Component.CheckMenu as CheckMenu
+
 import Util.FixPrecision as US exposing (fixPrecision)
 import Util.FloatUtils exposing (roundBy, calcDoseVol)
 import Util.Locals exposing (..)
 import Util.ListUtils exposing (findNearestMax, removeDuplicates)
 import EmergencyList.Medication as Medication
+import Util.Utils exposing (eqs)
 
 
 -- Constants
@@ -99,25 +103,32 @@ type alias Model =
     , cardioversion : Float
     , medications : List Medication.Bolus
     , calculated : Calculated
-    , indicatieSelect : List String
+    , indicatieSelect : SelectModel
     }
 
 
-checkMenuModel : List String
-checkMenuModel = []
---     let
---         inds =
---             Medication.medicationList
---                 |> List.map .category
---                 |> removeDuplicates
+type alias SelectModel =
+    { indications : List String
+    , selections : List String
+    , all : String
+    }
 
---         sels =
---             []
 
---         all =
---             "alles"
---     in
---         CheckMenu.Model all inds sels
+selectModel : SelectModel
+selectModel =
+    let
+        inds =
+            Medication.medicationList
+                |> List.map .category
+                |> removeDuplicates
+
+        sels =
+            []
+
+        all =
+            "alles"
+    in
+        SelectModel inds sels all
 
 
 model : Model
@@ -139,7 +150,7 @@ model =
     , cardioversion = 0
     , medications = Medication.medicationList
     , calculated = NotCalc
-    , indicatieSelect = checkMenuModel
+    , indicatieSelect = selectModel
     }
 
 
@@ -509,7 +520,7 @@ printEmergencyList model =
          ]
             ++ meds
         )
-            |> List.filter (\m -> (model.indicatieSelect |> List.isEmpty) || (model.indicatieSelect |> List.any ((==) m.indication)))
+            |> List.filter (\m -> (model.indicatieSelect.selections |> List.isEmpty) || (model.indicatieSelect.selections |> List.any ((==) m.indication)))
 
 
 printAge : Model -> String
@@ -647,7 +658,15 @@ toKeyValuePair segment =
 update : String -> Model -> Model
 update s model =
     let
-        selmodel = []
---            CheckMenu.update s model.indicatieSelect
+        indSel =
+            model.indicatieSelect
+
+        indSel_ =
+            if s == indSel.all then
+                { indSel | selections = [] }
+            else if indSel.selections |> List.any (eqs s) then
+                { indSel | selections = indSel.selections |> List.filter (\x -> not (x == s)) }
+            else
+                { indSel | selections = indSel.selections |> List.append [ s ] }
     in
-        { model | indicatieSelect = selmodel }
+        { model | indicatieSelect = indSel_ }

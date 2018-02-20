@@ -7,11 +7,7 @@
         "src",
         "src/Util",
         "src/EmergencyList",
-        "src/Component",
-        "vendor",
-        "vendor/elm-mdl",
-        "vendor/elm-mdl/src"
-    ],
+        "src/Component"    ],
     "exposed-modules": [],
     "dependencies": {
         "cuducos/elm-format-number": "4.0.2 <= v < 5.0.0",
