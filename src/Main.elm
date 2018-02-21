@@ -1,158 +1,42 @@
 module Main exposing (..)
 
+-- Style
+
+import GenStyle as Style
+
+
 -- HTML
 
 import Html exposing (Html)
 import Navigation
-import MaterialColor as Color
-import Color
 import Element as Element
 import Element.Attributes as Attributes
 import Element.Events as Events
 import Element.Input as Input
-import Style as Style
-import Style.Color as Color
-import Style.Font as Font
-import Style.Border as Border
-import Style.Shadow as Shadow
 import Json.Decode
+import Window
 
 
 -- Modules
 
-import Util.DomUtils exposing (..)
 import Util.FixPrecision exposing (fixPrecision)
 import Util.ListUtils as List
-import EmergencyList.EmergencyList as EmergencyList exposing (..)
-import Component.CheckMenu as CheckMenu
-
-
--- Style
-
-
-type Styles
-    = NoStyle
-    | Main
-    | Header
-    | Input
-    | Label
-    | Select
-    | Button
-    | TableHead
-    | TableRow
-    | TableRowHover
-    | Title
-    | MenuContents
-    | MenuItem
-    | MenuItemSelected
-    | Footer
-
-
-roboto : List Style.Font
-roboto =
-    [ Font.importUrl { url = "https://fonts.googleapis.com/css?family=Roboto", name = "Roboto" } ]
-
-
-stylesheet : Style.StyleSheet Styles variation
-stylesheet =
-    Style.styleSheet
-        [ Style.style NoStyle []
-        , Style.style Main
-            [ Font.typeface roboto
-            ]
-        , Style.style Header
-            [ Color.text Color.white
-            , Color.background Color.teal800
-            , Font.size 40
-            ]
-        , Style.style Button
-            [ Border.rounded 5
-            , Color.text Color.white
-            , Color.background Color.teal900
-            , Font.size 14
-            , Font.bold
-            , Style.hover [ Shadow.simple ]
-            ]
-        , Style.style Input
-            [ Font.size 16
-            , Color.text Color.teal900
-            , Color.border Color.teal100
-            , Border.bottom 1
-            , Style.hover [ Shadow.simple ]
-            , Style.focus [ Shadow.simple ]
-            ]
-        , Style.style Select
-            [ Color.border Color.teal100
-            , Border.bottom 1
-            , Style.hover [ Shadow.simple ]
-            ]
-        , Style.style Label
-            [ Color.text Color.teal400
-            , Font.size 14
-            ]
-        , Style.style TableHead
-            [ Color.text <| Color.rgb 158 158 158
-            , Font.size 13
-            , Font.bold
-            , Border.bottom 2
-            , Color.border <| Color.lightGray
-            , Style.cursor "pointer"
-            ]
-        , Style.style TableRow
-            [ Color.text <| Color.rgb 117 117 117
-
-            --             Only hovers a cell not the whole row
-            --             , Style.hover [ Color.background Color.lightGray
-            --                           ]
-            , Font.size 14
-            , Border.bottom 1
-            , Color.border <| Color.lightGray
-            ]
-        , Style.style TableRowHover
-            [ Font.size 14
-            , Color.text Color.black
-            , Color.background Color.lightGray
-            ]
-        , Style.style Title
-            [ Color.text <| Color.teal400
-            , Font.size 16
-            , Font.bold
-            ]
-        , Style.style MenuContents
-            [ Color.background Color.white
-            , Color.border Color.lightGray
-            , Border.all 1
-            , Shadow.simple
-            ]
-        , Style.style MenuItem
-            [ Style.cursor "pointer"
-            , Style.hover
-                [ Color.background Color.lightGray
-                ]
-            , Color.text Color.black
-            , Font.light
-            ]
-        , Style.style MenuItemSelected
-            [ Style.cursor "pointer"
-            , Color.background Color.lightGray
-            , Color.text Color.black
-            , Font.light
-            ]
-        , Style.style Footer
-            [ Color.background <| Color.rgb 66 66 66
-            , Color.text Color.white
-            ]
-        ]
-
+import Page.EmergencyList as EmergencyList exposing (..)
 
 
 -- Program
 
 
-init :
-    Navigation.Location
-    -> ( Model, Cmd msg )
-init location =
+type alias Device =
+    { width : Int
+    , height : Int
+    , userAgent : String
+    , supportsGrid : Bool
+    }
+
+
+init : Device -> Navigation.Location -> ( Model, Cmd msg )
+init device location =
     let
         dropDown n msg =
             Input.dropMenu (Just <| toString n) msg
@@ -167,18 +51,19 @@ init location =
             , hoverRowIndx = 0
             , counter = 0
             , menuState = MenuClosed
+            , device = device
             }
     in
         ( model, Cmd.none )
 
 
-main : Program Never Model Msg
+main : Program Device Model Msg
 main =
-    Navigation.program UrlChange
+    Navigation.programWithFlags UrlChange
         { init = init
         , view = view
         , update = update
-        , subscriptions = (\m -> Sub.none)
+        , subscriptions = subscriptions
         }
 
 
@@ -193,6 +78,7 @@ type alias Model =
     , hoverRowIndx : Int
     , counter : Int
     , menuState : MenuState
+    , device : Device
     }
 
 
@@ -201,8 +87,8 @@ type MenuState
     | MenuClosed
 
 
-emptyModel : Model
-emptyModel =
+emptyModel : Model -> Model
+emptyModel model =
     let
         dropDown msg =
             Input.dropMenu Nothing msg
@@ -213,6 +99,7 @@ emptyModel =
         , hoverRowIndx = 0
         , counter = 0
         , menuState = MenuClosed
+        , device = model.device
         }
 
 
@@ -231,6 +118,7 @@ type Msg
     | ToggleMenu
     | CloseMenu
     | SelectMenuItem String
+    | Resize Window.Size
 
 
 
@@ -272,6 +160,8 @@ update msg model =
                 ( emList, selMenu )
     in
         case msg of
+            -- Navigation
+            --
             UrlChange location ->
                 let
                     elist =
@@ -279,6 +169,8 @@ update msg model =
                 in
                     ( { model | emergencyList = elist }, Cmd.none )
 
+            -- Handle patient data
+            --
             UpdateYear selectMsg ->
                 let
                     model_ =
@@ -311,14 +203,17 @@ update msg model =
                     )
 
             Clear ->
-                ( emptyModel, Cmd.none )
+                ( emptyModel model, Cmd.none )
 
+            -- Handle table events
+            --
             TableRowEnter x ->
                 ( { model | hoverRowIndx = x }, Cmd.none )
 
             TableRowLeave x ->
                 ( { model | hoverRowIndx = 0 }, Cmd.none )
 
+            -- Handle menu events
             ToggleMenu ->
                 let
                     state =
@@ -341,6 +236,16 @@ update msg model =
                 in
                     ( { model | emergencyList = elist }, Cmd.none )
 
+            Resize size ->
+                let
+                    device =
+                        model.device
+
+                    { height, width } =
+                        size
+                in
+                    ( { model | device = { device | width = width, height = height } }, Cmd.none )
+
 
 
 -- View
@@ -353,31 +258,57 @@ onClickPreventDefault msg =
         (Json.Decode.succeed msg)
 
 
-view : Model -> Html Msg
-view model =
+
+-- Navbar
+
+
+navBar : Model -> Element.Element Style.Styles variation msg
+navBar model =
     let
-        numToString : Model -> a -> String
-        numToString model n =
-            if model.emergencyList.age < 0 then
-                ""
+        title =
+            "Pediatrische Noodlijst Berekeningen"
+    in
+        Element.header Style.Header [ Attributes.padding 30 ] (Element.text title)
+
+
+
+-- Body
+
+
+body : Model -> Element.Element Style.Styles variation Msg
+body model =
+    let
+        tableTitle =
+            if model.emergencyList.weight > 0 then
+                "Berekend op basis van gewicht: "
+                    ++ (fixPrecision 2 model.emergencyList.weight)
+                    ++ " kg"
             else
-                toString n
+                "Berekend op basis van gewicht: "
 
-        labelAbove s =
-            Input.labelAbove <| Element.el Label [ Attributes.alignLeft ] (Element.text s)
-
-        header =
-            Element.header Header [ Attributes.padding 30 ] (Element.text "Pediatrische Noodlijst Berekeningen")
+        tableHead s =
+            Element.el Style.TableHead
+                ([ Attributes.alignLeft
+                 , Attributes.padding 10
+                 ]
+                    |> List.append
+                        (if s |> String.startsWith "Indicatie" then
+                            [ onClickPreventDefault ToggleMenu ]
+                         else
+                            []
+                        )
+                )
+                (Element.text s)
 
         ageDropdown txt min max dropDown =
-            Input.select Select
+            Input.select Style.Select
                 [ Attributes.padding 10 ]
                 { label = labelAbove txt
                 , with = dropDown
                 , max = max + 1
                 , options = []
                 , menu =
-                    Input.menu Select
+                    Input.menu Style.Select
                         []
                         (List.range min max
                             |> List.map toString
@@ -394,27 +325,16 @@ view model =
         printList =
             model.emergencyList |> EmergencyList.printEmergencyList
 
-        tableHead s =
-            Element.el TableHead
-                ([ Attributes.alignLeft
-                 , Attributes.padding 10
-                 ]
-                    |> List.append
-                        (if s |> String.startsWith "Indicatie" then
-                            [ onClickPreventDefault ToggleMenu ]
-                         else
-                            []
-                        )
-                )
-                (Element.text s)
+        labelAbove s =
+            Input.labelAbove <| Element.el Style.Label [ Attributes.alignLeft ] (Element.text s)
 
         tableCell s i =
             let
                 style =
                     if model.hoverRowIndx == i + 1 then
-                        TableRowHover
+                        Style.TableRowHover
                     else
-                        TableRow
+                        Style.TableRow
             in
                 Element.el
                     style
@@ -425,14 +345,6 @@ view model =
                     ]
                     (Element.text s)
 
-        tableTitle =
-            if model.emergencyList.weight > 0 then
-                "Berekend op basis van gewicht: "
-                    ++ (fixPrecision 2 model.emergencyList.weight)
-                    ++ " kg"
-            else
-                ""
-
         tableMenu s =
             let
                 items =
@@ -442,9 +354,9 @@ view model =
                     let
                         style =
                             if model.emergencyList.indicatieSelect.selections |> List.any ((==) item) then
-                                MenuItemSelected
+                                Style.MenuItemSelected
                             else
-                                MenuItem
+                                Style.MenuItem
                     in
                         Element.el style [ Attributes.padding 15, onClickPreventDefault (SelectMenuItem item) ] <| Element.text item
             in
@@ -459,7 +371,7 @@ view model =
                             ++ " ▲"
                             |> tableHead
                             |> Element.below
-                                [ Element.column MenuContents
+                                [ Element.column Style.MenuContents
                                     [ Attributes.padding 10
                                     , Attributes.spacing 10
                                     , Events.onMouseLeave ToggleMenu
@@ -469,58 +381,102 @@ view model =
                                     )
                                 ]
     in
-        Element.viewport stylesheet <|
-            Element.column Main
-                [ Attributes.height Attributes.fill ]
-                [ header
-                , Element.row NoStyle
-                    [ Attributes.padding 50
-                    , Attributes.spacing 20
-                    , Attributes.alignBottom
-                    ]
-                    [ yearDropdown
-                    , monthDropdown
-                    , Input.text Input
-                        [ Attributes.padding 10 ]
-                        { onChange = UpdateWeight
-                        , value = model.emergencyList.weightText
-                        , label = labelAbove "Gewicht (kg)"
-                        , options = [ Input.textKey <| toString model.counter ]
-                        }
-                    , Element.button Button [ Events.onClick Clear, Attributes.padding 15 ] (Element.text "VERWIJDER")
-                    ]
-                , Element.paragraph Title
-                    [ Attributes.paddingLeft 50 ]
-                    [ Element.text tableTitle ]
-                , Element.el NoStyle
-                    [ Attributes.paddingLeft 50
-                    , Attributes.paddingTop 20
-                    , Attributes.paddingRight 50
-                    , Attributes.paddingBottom 50
-                    , Attributes.height Attributes.fill
-                    , Attributes.yScrollbar
-                    ]
-                    (Element.table Main
-                        []
-                        [ ("Indicatie" |> tableMenu) :: List.mapi (tableCell << .indication) printList
-                        , tableHead "Interventie" :: List.mapi (tableCell << .intervention) printList
-                        , tableHead "Berekend" :: List.mapi (tableCell << .value) printList
-                        , tableHead "Bereiding" :: List.mapi (tableCell << .preparation) printList
-                        , tableHead "Advies" :: List.mapi (tableCell << .advice) printList
-                        ]
-                    )
-                , Element.footer Footer
-                    [ Attributes.paddingLeft 50
-                    , Attributes.paddingTop 10
-                    , Attributes.paddingBottom 10
-                    ]
-                    (Element.row NoStyle
-                        [ Attributes.padding 15
-                        , Attributes.spacing 20
-                        ]
-                        [ Element.link "http://github.com/halcwb/GenAPLS.git" <| Element.text "GenAPLS Informedica 2008"
-                        , Element.link "https://www.eenheidintensievezorg.nl" <| Element.text "Eenheid Intensieve Zorg"
-                        , Element.link "https://www.kinderformularium.nl" <| Element.text "Kinderformularium"
-                        ]
-                    )
+        Element.column Style.Main
+            [ Attributes.height Attributes.fill ]
+            [ Element.row Style.None
+                [ Attributes.paddingLeft 50
+                , Attributes.paddingTop 20
+                , Attributes.paddingBottom 20
+                , Attributes.paddingRight 50
+                , Attributes.alignRight
+                , Attributes.spacing 50
+                , Attributes.alignBottom
                 ]
+                [ yearDropdown
+                , monthDropdown
+                , Input.text Style.Input
+                    [ Attributes.padding 10 ]
+                    { onChange = UpdateWeight
+                    , value = model.emergencyList.weightText
+                    , label = labelAbove "Gewicht (kg)"
+                    , options = [ Input.textKey <| toString model.counter ]
+                    }
+                , Element.button Style.Button [ Events.onClick Clear, Attributes.padding 10 ] (Element.text "VERWIJDER")
+                ]
+            , Element.paragraph Style.Title
+                [ Attributes.paddingLeft 50
+                , Attributes.paddingBottom 10
+                ]
+                [ Element.text tableTitle ]
+            , Element.el Style.None
+                [ Attributes.paddingLeft 50
+                , Attributes.paddingRight 50
+                , Attributes.paddingBottom 50
+                , Attributes.height Attributes.fill
+                , Attributes.yScrollbar
+                ]
+                (Element.table Style.Main
+                    []
+                    [ ("Indicatie" |> tableMenu) :: List.mapi (tableCell << .indication) printList
+                    , tableHead "Interventie" :: List.mapi (tableCell << .intervention) printList
+                    , tableHead "Berekend" :: List.mapi (tableCell << .value) printList
+                    , tableHead "Bereiding" :: List.mapi (tableCell << .preparation) printList
+                    , tableHead "Advies" :: List.mapi (tableCell << .advice) printList
+                    ]
+                )
+            ]
+
+
+
+-- Footer
+
+
+footer : Element.Element Style.Styles variation msg
+footer =
+    Element.footer Style.Footer
+        [ Attributes.paddingLeft 50
+        , Attributes.paddingTop 10
+        , Attributes.paddingBottom 10
+        ]
+        (Element.row Style.None
+            [ Attributes.padding 15
+            , Attributes.spacing 20
+            ]
+            [ Element.link "http://github.com/halcwb/GenAPLS.git" <| Element.text "GenAPLS Informedica 2008"
+            , Element.link "https://www.eenheidintensievezorg.nl" <| Element.text "Eenheid Intensieve Zorg"
+            , Element.link "https://www.kinderformularium.nl" <| Element.text "Kinderformularium"
+            ]
+        )
+
+
+
+-- View
+
+
+view : Model -> Html Msg
+view model =
+    if model.device.supportsGrid then
+        Element.viewport Style.stylesheet <|
+            Element.column Style.Main
+                [ Attributes.height Attributes.fill ]
+                [ navBar model
+                , body model
+                , footer
+                ]
+    else
+        Element.viewport Style.stylesheet <|
+            Element.column Style.Main
+                [ Attributes.height Attributes.fill ]
+                [ navBar model
+                , Element.el Style.None [ Attributes.height Attributes.fill ] <| Element.text "Oops kan met deze browser de inhoud niet weergeven"
+                , footer
+                ]
+
+
+
+-- Subscriptions
+
+
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    Window.resizes Resize

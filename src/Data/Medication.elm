@@ -1,4 +1,4 @@
-module EmergencyList.Medication exposing (..)
+module Data.Medication exposing (..)
 
 import FormatNumber exposing (..)
 import String.Extra exposing (replace)

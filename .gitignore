@@ -13,10 +13,12 @@
 # Add elm files
 !*.elm
 !elm-package.json
+!*.html
 
 # Add source files
 !src/
-!src/EmergencyList/
+!src/Page/
 !src/Util/
-!src/Component/
+!src/View/
+!src/Data
 

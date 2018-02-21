@@ -5,9 +5,10 @@
     "license": "BSD3",
     "source-directories": [
         "src",
+        "src/Page",
         "src/Util",
-        "src/EmergencyList",
-        "src/Component"    ],
+        "src/Data",
+        "src/View"    ],
     "exposed-modules": [],
     "dependencies": {
         "cuducos/elm-format-number": "4.0.2 <= v < 5.0.0",

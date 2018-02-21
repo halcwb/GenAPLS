@@ -1,4 +1,4 @@
-module EmergencyList.EmergencyList exposing (..)
+module Page.EmergencyList exposing (..)
 
 import FormatNumber exposing (format)
 import Navigation
@@ -12,7 +12,7 @@ import Util.FixPrecision as US exposing (fixPrecision)
 import Util.FloatUtils exposing (roundBy, calcDoseVol)
 import Util.Locals exposing (..)
 import Util.ListUtils exposing (findNearestMax, removeDuplicates)
-import EmergencyList.Medication as Medication
+import Data.Medication as Medication
 import Util.Utils exposing (eqs)
 
 
