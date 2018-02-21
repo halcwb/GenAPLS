@@ -154,7 +154,8 @@ medicationDefs : List ( String, String, Float, Float, Float, Float, String, Stri
 medicationDefs =
     [ ( "reanimatie", "glucose 10%", 0.2, 0, 25, 0.1, "gram", "" )
     , ( "reanimatie", "NaBic 8,4", 0.5, 0, 50, 1, "mmol", "" )
-    , ( "intubatie", "propofol", 2, 0, 0, 10, "mg", "" )
+    , ( "intubatie", "propofol 1%", 2, 0, 0, 10, "mg", "" )
+    , ( "intubatie", "propofol 2%", 2, 0, 0, 20, "mg", "" )
     , ( "intubatie", "midazolam", 0.2, 0, 10, 5, "mg", "" )
     , ( "intubatie", "esketamine", 0.5, 0, 5, 5, "mg", "" )
     , ( "intubatie", "etomidaat", 0.5, 0, 20, 2, "mg", "" )

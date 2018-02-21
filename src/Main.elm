@@ -14,6 +14,7 @@ import Style as Style
 import Style.Color as Color
 import Style.Font as Font
 import Style.Border as Border
+import Style.Shadow as Shadow
 import Json.Decode
 
 
@@ -44,6 +45,7 @@ type Styles
     | MenuContents
     | MenuItem
     | MenuItemSelected
+    | Footer
 
 
 roboto : List Style.Font
@@ -60,23 +62,29 @@ stylesheet =
             ]
         , Style.style Header
             [ Color.text Color.white
-            , Color.background Color.teal500
-            , Font.size 45
+            , Color.background Color.teal800
+            , Font.size 40
             ]
         , Style.style Button
             [ Border.rounded 5
             , Color.text Color.white
-            , Color.background Color.teal500
+            , Color.background Color.teal900
             , Font.size 14
             , Font.bold
+            , Style.hover [ Shadow.simple ]
             ]
         , Style.style Input
             [ Font.size 16
             , Color.text Color.teal900
+            , Color.border Color.teal100
+            , Border.bottom 1
+            , Style.hover [ Shadow.simple ]
+            , Style.focus [ Shadow.simple ]
             ]
         , Style.style Select
             [ Color.border Color.teal100
             , Border.bottom 1
+            , Style.hover [ Shadow.simple ]
             ]
         , Style.style Label
             [ Color.text Color.teal400
@@ -114,6 +122,7 @@ stylesheet =
             [ Color.background Color.white
             , Color.border Color.lightGray
             , Border.all 1
+            , Shadow.simple
             ]
         , Style.style MenuItem
             [ Style.cursor "pointer"
@@ -129,6 +138,10 @@ stylesheet =
             , Color.text Color.black
             , Font.light
             ]
+        , Style.style Footer
+            [ Color.background <| Color.rgb 66 66 66
+            , Color.text Color.white
+            ]
         ]
 
 
@@ -141,13 +154,16 @@ init :
     -> ( Model, Cmd msg )
 init location =
     let
-        dropDown msg =
-            Input.dropMenu Nothing msg
+        dropDown n msg =
+            Input.dropMenu (Just <| toString n) msg
+
+        elist =
+            location |> EmergencyList.init
 
         model =
-            { emergencyList = location |> EmergencyList.init
-            , yearDropdown = dropDown UpdateYear
-            , monthDropdown = dropDown UpdateMonth
+            { emergencyList = elist
+            , yearDropdown = dropDown elist.year UpdateYear
+            , monthDropdown = dropDown elist.month UpdateMonth
             , hoverRowIndx = 0
             , counter = 0
             , menuState = MenuClosed
@@ -318,13 +334,13 @@ update msg model =
             CloseMenu ->
                 ( { model | menuState = MenuClosed }, Cmd.none )
 
-
             SelectMenuItem s ->
                 let
                     elist =
                         model.emergencyList |> EmergencyList.update s
                 in
-                    ({ model | emergencyList = elist }, Cmd.none )
+                    ( { model | emergencyList = elist }, Cmd.none )
+
 
 
 -- View
@@ -351,7 +367,7 @@ view model =
             Input.labelAbove <| Element.el Label [ Attributes.alignLeft ] (Element.text s)
 
         header =
-            Element.header Header [ Attributes.padding 50 ] (Element.text "Pediatrische Noodlijst Berekeningen")
+            Element.header Header [ Attributes.padding 30 ] (Element.text "Pediatrische Noodlijst Berekeningen")
 
         ageDropdown txt min max dropDown =
             Input.select Select
@@ -421,6 +437,7 @@ view model =
             let
                 items =
                     model.emergencyList.indicatieSelect.all :: model.emergencyList.indicatieSelect.indications
+
                 map item =
                     let
                         style =
@@ -433,15 +450,20 @@ view model =
             in
                 case model.menuState of
                     MenuClosed ->
-                        s ++ " ▼"
+                        s
+                            ++ " ▼"
                             |> tableHead
 
                     MenuOpen ->
-                        s ++ " ▲"
+                        s
+                            ++ " ▲"
                             |> tableHead
                             |> Element.below
                                 [ Element.column MenuContents
-                                    [ Attributes.padding 10, Attributes.spacing 10 ]
+                                    [ Attributes.padding 10
+                                    , Attributes.spacing 10
+                                    , Events.onMouseLeave ToggleMenu
+                                    ]
                                     (items
                                         |> List.map map
                                     )
@@ -451,14 +473,15 @@ view model =
             Element.column Main
                 [ Attributes.height Attributes.fill ]
                 [ header
-                , Element.row Input
+                , Element.row NoStyle
                     [ Attributes.padding 50
                     , Attributes.spacing 20
+                    , Attributes.alignBottom
                     ]
                     [ yearDropdown
                     , monthDropdown
                     , Input.text Input
-                        []
+                        [ Attributes.padding 10 ]
                         { onChange = UpdateWeight
                         , value = model.emergencyList.weightText
                         , label = labelAbove "Gewicht (kg)"
@@ -470,17 +493,34 @@ view model =
                     [ Attributes.paddingLeft 50 ]
                     [ Element.text tableTitle ]
                 , Element.el NoStyle
-                    [ Attributes.paddingLeft 50, Attributes.paddingTop 20, Attributes.paddingRight 50 ]
+                    [ Attributes.paddingLeft 50
+                    , Attributes.paddingTop 20
+                    , Attributes.paddingRight 50
+                    , Attributes.paddingBottom 50
+                    , Attributes.height Attributes.fill
+                    , Attributes.yScrollbar
+                    ]
                     (Element.table Main
                         []
                         [ ("Indicatie" |> tableMenu) :: List.mapi (tableCell << .indication) printList
                         , tableHead "Interventie" :: List.mapi (tableCell << .intervention) printList
-                        , tableHead "" :: List.mapi (tableCell << .value) printList
+                        , tableHead "Berekend" :: List.mapi (tableCell << .value) printList
                         , tableHead "Bereiding" :: List.mapi (tableCell << .preparation) printList
                         , tableHead "Advies" :: List.mapi (tableCell << .advice) printList
                         ]
                     )
-                , Element.el NoStyle
-                    [ Attributes.height (Attributes.px 50)]
-                    Element.empty
+                , Element.footer Footer
+                    [ Attributes.paddingLeft 50
+                    , Attributes.paddingTop 10
+                    , Attributes.paddingBottom 10
+                    ]
+                    (Element.row NoStyle
+                        [ Attributes.padding 15
+                        , Attributes.spacing 20
+                        ]
+                        [ Element.link "http://github.com/halcwb/GenAPLS.git" <| Element.text "GenAPLS Informedica 2008"
+                        , Element.link "https://www.eenheidintensievezorg.nl" <| Element.text "Eenheid Intensieve Zorg"
+                        , Element.link "https://www.kinderformularium.nl" <| Element.text "Kinderformularium"
+                        ]
+                    )
                 ]
