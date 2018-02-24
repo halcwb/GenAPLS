@@ -48,21 +48,42 @@ mapi f xs =
         mapi_ 0 xs []
 
 
-transpose : List (List a) -> List (List a)
+isRagged : List (List a) -> Bool
+isRagged xs =
+    case
+        xs
+            |> List.map List.length
+    of
+        [] ->
+            False
+
+        h :: t ->
+            t |> List.all ((==) h) |> not
+
+
+transpose : List (List a) -> Result String (List (List a))
 transpose xs =
-    let
-        trans_ xs rest row acc =
-            case xs of
-                [] ->
-                    trans_ rest [] [] (acc ++ [ row ])
+    if xs |> isRagged then
+        Err "Cannot transpose a ragged list of lists"
+    else if xs |> List.isEmpty then
+        Ok xs
+    else
+        let
+            trans_ xs rest row acc =
+                case xs of
+                    [] ->
+                        trans_ rest [] [] (acc ++ [ row ])
 
-                h :: t ->
-                    case h of
-                        [] ->
-                            acc
+                    h :: t ->
+                        case h of
+                            [] ->
+                                if acc |> List.isEmpty then
+                                    [ [] ]
+                                else
+                                    acc
 
-                        --++ [ row ]
-                        h_ :: t_ ->
-                            trans_ t (rest ++ [ t_ ]) (row ++ [ h_ ]) acc
-    in
-        trans_ xs [] [] []
+                            --++ [ row ]
+                            h_ :: t_ ->
+                                trans_ t (rest ++ [ t_ ]) (row ++ [ h_ ]) acc
+        in
+            Ok <| trans_ xs [] [] []
