@@ -42,7 +42,6 @@ type alias Device =
 init : Device -> Navigation.Location -> ( Model, Cmd msg )
 init device location =
     let
-
         elist =
             location |> EmergencyList.init
 
@@ -74,40 +73,33 @@ type Msg
     | Resize Window.Size
 
 
-
-
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-        case msg of
-            -- Navigation
-            --
-            UrlChange location ->
-                let
-                    elist =
-                        location |> EmergencyList.init
-                in
-                    ( { model | emergencyList = elist }, Cmd.none )
+    case msg of
+        -- Navigation
+        --
+        UrlChange location ->
+            let
+                elist =
+                    location |> EmergencyList.init
+            in
+                ( { model | emergencyList = elist }, Cmd.none )
 
-            EListMsg msg ->
-                ( { model | emergencyList = model.emergencyList |> EmergencyList.update msg |> Tuple.first }
-                , Cmd.none
-                )
+        EListMsg msg ->
+            ( { model | emergencyList = model.emergencyList |> EmergencyList.update msg |> Tuple.first }
+            , Cmd.none
+            )
 
-
-            Resize size ->
-                let
-                    device =
-                        model.device
-
-
-                in
-                    ( { model | device = { device | size = size } }, Cmd.none )
+        Resize size ->
+            let
+                device =
+                    model.device
+            in
+                ( { model | device = { device | size = size } }, Cmd.none )
 
 
 
 -- View
-
-
 -- Navbar
 
 
@@ -146,6 +138,7 @@ footer model =
 
 -- Body
 
+
 body : Model -> Element.Element Style.Styles variation Msg
 body model =
     Element.column
@@ -156,14 +149,14 @@ body model =
         , Attributes.paddingRight 20
         ]
         [ model.device.size
-              |> Element.classifyDevice
-              |> EmergencyList.body model.emergencyList
-              |> Element.map EListMsg
+            |> Element.classifyDevice
+            |> EmergencyList.body model.emergencyList
+            |> Element.map EListMsg
         ]
 
 
--- View
 
+-- View
 
 
 view : Model -> Html Msg

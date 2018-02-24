@@ -22,3 +22,6 @@
 !src/View/
 !src/Data
 
+# Add test files
+!tests/
+

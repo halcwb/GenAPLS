@@ -53,15 +53,16 @@ transpose xs =
     let
         trans_ xs rest row acc =
             case xs of
-            [] ->
-                trans_ rest [] [] (acc ++ [row])
-
-            h :: t ->
-                case h of
                 [] ->
-                    acc ++ [ row ]
-                h_ :: t_ ->
-                    trans_ t (rest ++ [t_]) (row ++ [h_]) acc
+                    trans_ rest [] [] (acc ++ [ row ])
 
+                h :: t ->
+                    case h of
+                        [] ->
+                            acc
+
+                        --++ [ row ]
+                        h_ :: t_ ->
+                            trans_ t (rest ++ [ t_ ]) (row ++ [ h_ ]) acc
     in
         trans_ xs [] [] []

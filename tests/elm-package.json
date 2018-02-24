@@ -1,18 +1,20 @@
 {
     "version": "1.0.0",
-    "summary": "Calculate APLS formulas according patient age and/or weight",
+    "summary": "Test Suites",
     "repository": "https://github.com/halcwb/genapls.git",
     "license": "BSD3",
     "source-directories": [
-        "src",
-        "src/Page",
-        "src/Util",
-        "src/Data",
-        "src/View"
+        "../src",
+        "../src/Page",
+        "../src/Util",
+        "../src/Data",
+        "../src/View",
+        "."
     ],
     "exposed-modules": [],
     "dependencies": {
         "cuducos/elm-format-number": "4.0.2 <= v < 5.0.0",
+        "eeue56/elm-html-test": "5.1.3 <= v < 6.0.0",
         "elm-community/elm-test": "4.2.0 <= v < 5.0.0",
         "elm-community/elm-time": "1.0.7 <= v < 2.0.0",
         "elm-community/material-icons": "1.1.0 <= v < 2.0.0",
