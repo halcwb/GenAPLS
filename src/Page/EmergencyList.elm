@@ -1,74 +1,41 @@
 module Page.EmergencyList exposing (..)
 
-import FormatNumber exposing (format)
 import Navigation
-import Dict exposing (Dict)
-import Http
-
-
--- import Component.CheckMenu as CheckMenu
-
-import Util.FixPrecision as US exposing (fixPrecision)
-import Util.FloatUtils exposing (roundBy, calcDoseVol)
-import Util.Locals exposing (..)
-import Util.ListUtils exposing (findNearestMax, removeDuplicates)
+import Element as Element
+import Element.Attributes as Attributes
+import Element.Events as Events
+import Element.Input as Input
+import GenStyle as Style
+import Data.Intervention as Intervention
 import Data.Medication as Medication
-import Util.Utils exposing (eqs)
+import Util.FixPrecision as US exposing (fixPrecision)
+import Util.ListUtils as List
+import Json.Decode
 
 
--- Constants
+-- Helper
 
 
-no_age : Float
-no_age =
-    -0.5
+onClickPreventDefault : msg -> Element.Attribute variation msg
+onClickPreventDefault msg =
+    Events.onWithOptions "click"
+        { preventDefault = True, stopPropagation = True }
+        (Json.Decode.succeed msg)
 
 
-zero_age : number
-zero_age =
-    0
+
+{- This is a hack to ensure that
+   the model and a text input field
+   remains is sync. The model counter
+   should be updated each time the input
+   field changes through code, not by
+   user input
+-}
 
 
-half_age : Float
-half_age =
-    0.5
-
-
-min_weight : number
-min_weight =
-    3
-
-
-max_weight : number
-max_weight =
-    150
-
-
-max_defib : number
-max_defib =
-    150
-
-
-max_epi : number
-max_epi =
-    1
-
-
-joules : List number
-joules =
-    [ 1
-    , 2
-    , 3
-    , 5
-    , 7
-    , 10
-    , 20
-    , 30
-    , 50
-    , 70
-    , 100
-    , 150
-    ]
+updateCounter : Model -> Model
+updateCounter model =
+    { model | counter = model.counter + 1 }
 
 
 
@@ -80,393 +47,50 @@ type Age
     | Month
 
 
-type Calculated
-    = IsCalc
-    | NotCalc
+type MenuState
+    = MenuOpen
+    | MenuClosed
 
 
 type alias Model =
-    { age : Float
-    , year : Float
-    , month : Float
-    , ageText : String
-    , weight : Float
-    , weightText : String
-    , calcWeight : Bool
-    , tubeSize : ( Float, Float, Float )
-    , tubeLengthOral : Float
-    , tubeLengthNasal : Float
-    , epinephrineIV : ( Float, Float, Float )
-    , epinephrineTR : ( Float, Float, Float )
-    , fluidBolus : Float
-    , defibrillation : Float
-    , cardioversion : Float
-    , medications : List Medication.Bolus
-    , calculated : Calculated
-    , indicatieSelect : SelectModel
-    }
-
-
-type alias SelectModel =
-    { indications : List String
+    { interventions : Intervention.Model
+    , indications : List String
     , selections : List String
     , all : String
+    , yearDropdown : Input.SelectWith String Msg
+    , monthDropdown : Input.SelectWith String Msg
+    , hoverRowIndx : Int
+    , menuState : MenuState
+    , counter : Int
     }
 
 
-selectModel : SelectModel
-selectModel =
+newModel : Model
+newModel =
     let
         inds =
             Medication.medicationList
                 |> List.map .category
-                |> removeDuplicates
+                |> List.removeDuplicates
 
-        sels =
-            []
-
-        all =
-            "alles"
+        dropDown msg =
+            Input.dropMenu Nothing msg
     in
-        SelectModel inds sels all
-
-
-model : Model
-model =
-    { age = no_age
-    , year = 0
-    , month = 0
-    , ageText = ""
-    , weight = 0
-    , weightText = ""
-    , calcWeight = True
-    , tubeSize = ( 0, 0, 0 )
-    , tubeLengthOral = 0
-    , tubeLengthNasal = 0
-    , epinephrineIV = ( 0, 0, 0 )
-    , epinephrineTR = ( 0, 0, 0 )
-    , fluidBolus = 0
-    , defibrillation = 0
-    , cardioversion = 0
-    , medications = Medication.medicationList
-    , calculated = NotCalc
-    , indicatieSelect = selectModel
-    }
+        { interventions = Intervention.model
+        , indications = inds
+        , selections = []
+        , all = "alles"
+        , yearDropdown = dropDown UpdateYear
+        , monthDropdown = dropDown UpdateMonth
+        , hoverRowIndx = 0
+        , menuState = MenuClosed
+        , counter = 0
+        }
 
 
 init : Navigation.Location -> Model
 init location =
-    let
-        years =
-            case
-                location.search
-                    |> parseParams
-                    |> Dict.get "years"
-            of
-                Just a ->
-                    a
-
-                Nothing ->
-                    ""
-
-        months =
-            case
-                location.search
-                    |> parseParams
-                    |> Dict.get "months"
-            of
-                Just a ->
-                    a
-
-                Nothing ->
-                    ""
-
-        wght =
-            case
-                location.search
-                    |> parseParams
-                    |> Dict.get "weight"
-            of
-                Just w ->
-                    w
-
-                Nothing ->
-                    ""
-
-        initModel =
-            if wght == "" then
-                model
-                    |> setAge Year years
-                    |> setAge Month months
-            else
-                model
-                    |> setAge Year years
-                    |> setAge Month months
-                    |> setWeight wght
-    in
-        initModel |> calculate
-
-
-
--- Setters
-
-
-setAge : Age -> String -> Model -> Model
-setAge a age model =
-    case String.toFloat age of
-        Ok n ->
-            if n >= zero_age then
-                case a of
-                    Year ->
-                        { model | age = n + model.month / 12, year = n, calcWeight = True }
-
-                    Month ->
-                        { model | age = model.year + n / 12, month = n, calcWeight = True }
-            else
-                model
-
-        Err _ ->
-            model
-
-
-setWeight : String -> Model -> Model
-setWeight txt model =
-    let
-        model_ =
-            case String.toFloat txt of
-                Ok n ->
-                    if n >= min_weight && n <= max_weight then
-                        { model | weight = n, weightText = txt, calcWeight = False }
-                    else
-                        { model
-                            | weight = 0
-                            , weightText = txt
-                            , calcWeight = False
-                        }
-
-                Err _ ->
-                    if model.weight == 0 || txt == "" then
-                        { model
-                            | weight = 0
-                            , weightText = ""
-                            , calcWeight = False
-                        }
-                    else
-                        model
-    in
-        model_
-
-
-
--- Calculate
-
-
-calcMinMax : Float -> Float -> (Float -> Float) -> Float -> Float
-calcMinMax min max f x =
-    let
-        y =
-            f x
-    in
-        if y > max then
-            max
-        else if y < min then
-            min
-        else
-            y
-
-
-calcMax : Float -> (Float -> Float) -> Float -> Float
-calcMax =
-    calcMinMax 0
-
-
-calcAge : Model -> Model
-calcAge model =
-    if model.age == no_age then
-        model
-    else
-        { model | ageText = format locale1 model.age ++ " jaar" }
-
-
-calcWeight : Model -> Model
-calcWeight model =
-    if model.calcWeight then
-        let
-            age_zero_weight =
-                3.5
-
-            age_6mo_weight =
-                6
-        in
-            if model.age == no_age then
-                model
-            else if model.age == zero_age then
-                { model | weight = age_zero_weight, weightText = toString age_zero_weight }
-            else if model.age > zero_age && model.age <= half_age then
-                { model | weight = age_6mo_weight, weightText = toString age_6mo_weight }
-            else
-                let
-                    w =
-                        model.age * 2.5 + 8
-                in
-                    { model | weight = w, weightText = toString w }
-    else
-        model
-
-
-calcTubeSize : Model -> Model
-calcTubeSize model =
-    let
-        maxSize =
-            7.5
-
-        calc a =
-            let
-                c =
-                    a |> calcMax maxSize (\n -> ((n / 4) + 4) |> roundBy 0.5)
-
-                l =
-                    c - 0.5
-
-                r =
-                    c + 0.5
-            in
-                ( l, c, r )
-    in
-        if model.age == zero_age then
-            { model | tubeSize = ( 3.0, 3.5, 4.0 ) }
-        else
-            { model | tubeSize = calc model.age }
-
-
-calcTubLength : Float -> Model -> Model
-calcTubLength n model =
-    let
-        l =
-            model.age
-                / 2
-                + n
-                |> roundBy 0.5
-    in
-        if n == 12 then
-            { model | tubeLengthOral = l }
-        else
-            { model | tubeLengthNasal = l }
-
-
-calcTubeLengthOral : Model -> Model
-calcTubeLengthOral =
-    calcTubLength 12
-
-
-calcTubeLengthNasal : Model -> Model
-calcTubeLengthNasal model =
-    calcTubLength 15 model
-
-
-calcEpinephrine : Model -> Model
-calcEpinephrine model =
-    let
-        iv =
-            calcDoseVol model.weight 0.01 0.1 0.01 0.5
-
-        tr =
-            calcDoseVol model.weight 0.1 0.1 0.1 5
-    in
-        Debug.log "calcEpi"
-            { model
-                | epinephrineIV = ( iv |> Tuple.first, iv |> Tuple.second, (iv |> Tuple.second) / 10 )
-                , epinephrineTR = ( tr |> Tuple.first, tr |> Tuple.second, (tr |> Tuple.second) / 10 )
-            }
-
-
-calcFluidBolus : Model -> Model
-calcFluidBolus model =
-    { model | fluidBolus = calcMax 1000 (\n -> (n * 20) |> roundBy 10) model.weight }
-
-
-calcDefib : Model -> Model
-calcDefib model =
-    let
-        d =
-            joules
-                |> findNearestMax (model.weight * 4)
-    in
-        { model
-            | defibrillation =
-                if d > max_defib then
-                    max_defib
-                else
-                    d
-        }
-
-
-calcCardiov : Model -> Model
-calcCardiov model =
-    let
-        d =
-            joules
-                |> findNearestMax (model.weight * 2)
-    in
-        { model
-            | cardioversion =
-                if d > max_defib then
-                    max_defib
-                else
-                    d
-        }
-
-
-calcMeds : Model -> Model
-calcMeds model =
-    { model
-        | medications =
-            model.medications
-                |> List.map (Medication.calculate model.weight)
-    }
-
-
-setCalculated : Bool -> Model -> Model
-setCalculated b model =
-    { model
-        | calculated =
-            if b then
-                IsCalc
-            else
-                NotCalc
-    }
-
-
-isCalculated : Model -> Bool
-isCalculated model =
-    case model.calculated of
-        IsCalc ->
-            True
-
-        NotCalc ->
-            False
-
-
-calculate : Model -> Model
-calculate mdl =
-    if mdl.age == no_age then
-        model
-            |> (setCalculated False)
-    else if mdl.weight == 0 && not mdl.calcWeight then
-        mdl
-    else
-        mdl
-            |> calcWeight
-            |> calcTubeSize
-            |> calcAge
-            |> calcTubeLengthNasal
-            |> calcTubeLengthOral
-            |> calcEpinephrine
-            |> calcFluidBolus
-            |> calcDefib
-            |> calcCardiov
-            |> calcMeds
-            |> (setCalculated True)
+    { newModel | interventions = Intervention.init location.search }
 
 
 
@@ -486,11 +110,38 @@ type alias Intervention =
 printEmergencyList : Model -> List Intervention
 printEmergencyList model =
     let
+        printTubeSize =
+            Intervention.printTubeSize
+
+        printTubeLengthOral =
+            Intervention.printTubeLengthOral
+
+        printTubeLengthNasal =
+            Intervention.printTubeLengthNasal
+
+        printEpinephrineIV =
+            Intervention.printEpinephrineIV
+
+        printEpinephrineTR =
+            Intervention.printEpinephrineTR
+
+        printFluidBolus =
+            Intervention.printFluidBolus
+
+        printDefibrillation =
+            Intervention.printDefibrillation
+
+        printCardioversion =
+            Intervention.printCardioversion
+
+        intervs =
+            model.interventions
+
         meds =
             let
                 dosePerKg m =
                     m.dose
-                        / model.weight
+                        / intervs.weight
                         |> fixPrecision 1
 
                 dose m =
@@ -507,166 +158,388 @@ printEmergencyList model =
                 advice m =
                     m |> Medication.printAdvice
             in
-                List.map (\m -> Intervention m.category m.name (m |> dose) (m |> volume) "" (m |> advice)) model.medications
+                List.map (\m -> Intervention m.category m.name (m |> dose) (m |> volume) "" (m |> advice)) intervs.medications
     in
-        ([ Intervention "reanimatie" "tube maat" (printTubeSize model) "" "" "4 + Leeftijd / 4"
-         , Intervention "reanimatie" "tube lengte oraal" (printTubeLengthOral model) "" "" "12 + Leeftijd / 2"
-         , Intervention "reanimatie" "tube lengte nasaal" (printTubeLengthNasal model) "" "" "15 + Leeftijd / 2"
-         , Intervention "reanimatie" "epinephrine iv/io" (model |> printEpinephrineIV >> Tuple.first) (model |> printEpinephrineIV >> Tuple.second) "" "0,01 mg/kg iv"
-         , Intervention "reanimatie" "epinephrine tracheaal" (model |> printEpinephrineTR >> Tuple.first) (model |> printEpinephrineTR >> Tuple.second) "" "0,1 mg/kg trach"
-         , Intervention "reanimatie" "vaat vulling" (model |> printFluidBolus >> Tuple.first) (model |> printFluidBolus >> Tuple.second) "" "20 ml/kg"
-         , Intervention "reanimatie" "defibrillatie" (model |> printDefibrillation >> Tuple.first) (model |> printDefibrillation >> Tuple.second) "" "4 Joule/kg"
-         , Intervention "reanimatie" "cardioversie" (model |> printCardioversion |> Tuple.first) (model |> printCardioversion >> Tuple.second) "" "2 Joule/kg"
+        ([ Intervention "reanimatie" "tube maat" (printTubeSize intervs) "" "" "4 + Leeftijd / 4"
+         , Intervention "reanimatie" "tube lengte oraal" (printTubeLengthOral intervs) "" "" "12 + Leeftijd / 2"
+         , Intervention "reanimatie" "tube lengte nasaal" (printTubeLengthNasal intervs) "" "" "15 + Leeftijd / 2"
+         , Intervention "reanimatie" "epinephrine iv/io" (intervs |> printEpinephrineIV >> Tuple.first) (intervs |> printEpinephrineIV >> Tuple.second) "" "0,01 mg/kg iv"
+         , Intervention "reanimatie" "epinephrine tracheaal" (intervs |> printEpinephrineTR >> Tuple.first) (intervs |> printEpinephrineTR >> Tuple.second) "" "0,1 mg/kg trach"
+         , Intervention "reanimatie" "vaat vulling" (intervs |> printFluidBolus >> Tuple.first) (intervs |> printFluidBolus >> Tuple.second) "" "20 ml/kg"
+         , Intervention "reanimatie" "defibrillatie" (intervs |> printDefibrillation >> Tuple.first) (intervs |> printDefibrillation >> Tuple.second) "" "4 Joule/kg"
+         , Intervention "reanimatie" "cardioversie" (intervs |> printCardioversion |> Tuple.first) (intervs |> printCardioversion >> Tuple.second) "" "2 Joule/kg"
          ]
             ++ meds
         )
-            |> List.filter (\m -> (model.indicatieSelect.selections |> List.isEmpty) || (model.indicatieSelect.selections |> List.any ((==) m.indication)))
-
-
-printAge : Model -> String
-printAge model =
-    if model.age == no_age then
-        ""
-    else
-        format locale1 model.age ++ " jaar"
-
-
-printWeight : Model -> String
-printWeight model =
-    if model.weight == 0 then
-        ""
-    else
-        format locale1 model.weight ++ " kg"
-
-
-printTubeSize : Model -> String
-printTubeSize model =
-    if model.tubeSize == ( 0, 0, 0 ) then
-        ""
-    else
-        let
-            print n =
-                format locale1 n
-
-            ( r, c, l ) =
-                model.tubeSize
-        in
-            (r |> print)
-                ++ " - "
-                ++ (c |> print)
-                ++ " - "
-                ++ (l |> print)
-
-
-printTubeLength : Float -> String
-printTubeLength n =
-    if n == 0 then
-        ""
-    else
-        format locale1 n ++ " cm"
-
-
-printTubeLengthOral : Model -> String
-printTubeLengthOral model =
-    printTubeLength model.tubeLengthOral
-
-
-printTubeLengthNasal : Model -> String
-printTubeLengthNasal model =
-    printTubeLength model.tubeLengthNasal
-
-
-printEpinephrine : Float -> ( Float, Float, Float ) -> String -> ( String, String )
-printEpinephrine w e r =
-    if e == ( 0, 0, 0 ) then
-        ( "", "" )
-    else
-        let
-            ( d, s1, s2 ) =
-                e
-
-            dosePerKg =
-                d / w |> fixPrecision 2
-        in
-            ( (US.fixPrecision 2 d ++ " mg" ++ " " ++ r ++ "(" ++ dosePerKg ++ " mg/kg)")
-            , (Util.FloatUtils.printVolume s1 ++ " ml van 0,1 mg/ml (1:10.000) of ")
-                ++ (Util.FloatUtils.printVolume s2 ++ " ml van 1 mg/ml (1:1000)")
-            )
-
-
-printEpinephrineIV : Model -> ( String, String )
-printEpinephrineIV model =
-    printEpinephrine model.weight model.epinephrineIV ""
-
-
-printEpinephrineTR : Model -> ( String, String )
-printEpinephrineTR model =
-    printEpinephrine model.weight model.epinephrineTR ""
-
-
-printFluidBolus : Model -> ( String, String )
-printFluidBolus model =
-    if model.fluidBolus == 0 then
-        ( "", "" )
-    else
-        ( format locale0 model.fluidBolus ++ " ml NaCl 0,9%", "" )
-
-
-printDefibrillation : Model -> ( String, String )
-printDefibrillation model =
-    if model.defibrillation == 0 then
-        ( "", "" )
-    else
-        ( format locale0 model.defibrillation ++ " Joule", "" )
-
-
-printCardioversion : Model -> ( String, String )
-printCardioversion model =
-    if model.cardioversion == 0 then
-        ( "", "" )
-    else
-        ( format locale0 model.cardioversion ++ " Joule", "" )
-
-
-
---- UrlParser
-
-
-parseParams : String -> Dict String String
-parseParams queryString =
-    queryString
-        |> String.dropLeft 1
-        |> String.split "&"
-        |> List.filterMap toKeyValuePair
-        |> Dict.fromList
-
-
-toKeyValuePair : String -> Maybe ( String, String )
-toKeyValuePair segment =
-    case String.split "=" segment of
-        [ key, value ] ->
-            Maybe.map2 (,) (Http.decodeUri key) (Http.decodeUri value)
-
-        _ ->
-            Nothing
+            |> List.filter (\m -> (model.selections |> List.isEmpty) || (model.selections |> List.any ((==) m.indication)))
 
 
 
 -- Update
 
 
-update : String -> Model -> Model
-update s model =
-    let
-        indSel =
-            model.indicatieSelect
+type Msg
+    = UpdateYear (Input.SelectMsg String)
+    | UpdateMonth (Input.SelectMsg String)
+    | UpdateWeight String
+    | Clear
+    | TableRowEnter Int
+    | TableRowLeave
+    | ToggleMenu
+    | CloseMenu
+    | SelectMenuItem String
 
-        indSel_ =
-            if s == indSel.all then
-                { indSel | selections = [] }
-            else if indSel.selections |> List.any (eqs s) then
-                { indSel | selections = indSel.selections |> List.filter (\x -> not (x == s)) }
-            else
-                { indSel | selections = indSel.selections |> List.append [ s ] }
+
+setAge : Age -> String -> Model -> Model
+setAge age string model =
+    let
+        age_ =
+            case age of
+                Year ->
+                    Intervention.Year
+
+                Month ->
+                    Intervention.Month
     in
-        { model | indicatieSelect = indSel_ }
+        { model | interventions = model.interventions |> Intervention.setAge age_ string }
+
+
+setWeight : String -> Model -> Model
+setWeight string model =
+    { model | interventions = model.interventions |> Intervention.setWeight string }
+
+
+calculate : Model -> Model
+calculate model =
+    { model | interventions = model.interventions |> Intervention.calculate }
+
+
+updateModel : String -> Model -> Model
+updateModel s model =
+    let
+        model_ =
+            if s == model.all then
+                { model | selections = [] }
+            else if model.selections |> List.any ((==) s) then
+                { model | selections = model.selections |> List.filter (\x -> not (x == s)) }
+            else
+                { model | selections = model.selections |> List.append [ s ] }
+    in
+        model_
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    let
+        updateAge age selectMsg menu =
+            let
+                selMenu =
+                    menu |> Input.updateSelection selectMsg
+
+                selected =
+                    selMenu |> Input.selected
+
+                model_ =
+                    case selected of
+                        Just a ->
+                            model
+                                |> setAge age a
+                                |> calculate
+
+                        Nothing ->
+                            model
+            in
+                ( model_, selMenu )
+    in
+        case msg of
+            -- Handle patient data
+            --
+            UpdateYear selectMsg ->
+                let
+                    model_ =
+                        let
+                            ( newModel, selMenu ) =
+                                model.yearDropdown |> updateAge Year selectMsg
+                        in
+                            { newModel | yearDropdown = selMenu }
+                in
+                    ( model_ |> updateCounter, Cmd.none )
+
+            UpdateMonth selectMsg ->
+                let
+                    model_ =
+                        let
+                            ( newModel, selMenu ) =
+                                model.monthDropdown |> updateAge Month selectMsg
+                        in
+                            { newModel | monthDropdown = selMenu }
+                in
+                    ( model_ |> updateCounter, Cmd.none )
+
+            UpdateWeight txt ->
+                let
+                    model_ =
+                        setWeight txt model |> calculate
+                in
+                    ( model_
+                    , Cmd.none
+                    )
+
+            Clear ->
+                ( newModel, Cmd.none )
+
+            -- Handle table events
+            --
+            TableRowEnter x ->
+                ( { model | hoverRowIndx = x }, Cmd.none )
+
+            TableRowLeave ->
+                ( { model | hoverRowIndx = 0 }, Cmd.none )
+
+            -- Handle menu events
+            ToggleMenu ->
+                let
+                    state =
+                        case model.menuState of
+                            MenuClosed ->
+                                MenuOpen
+
+                            MenuOpen ->
+                                MenuClosed
+                in
+                    ( { model | menuState = state }, Cmd.none )
+
+            CloseMenu ->
+                ( { model | menuState = MenuClosed }, Cmd.none )
+
+            SelectMenuItem s ->
+                let
+                    model_ =
+                        model |> updateModel s
+                in
+                    ( model_, Cmd.none )
+
+
+
+-- View
+
+
+body : Model -> Element.Device -> Element.Element Style.Styles variation Msg
+body model device =
+    let
+        tableTitle =
+            if model.interventions.weight > 0 then
+                "Berekend op basis van gewicht: "
+                    ++ (fixPrecision 2 model.interventions.weight)
+                    ++ " kg"
+            else
+                "Berekend op basis van gewicht: "
+
+        tableHead s =
+            Element.el Style.TableHead
+                ([ Attributes.alignLeft
+                 , Attributes.padding 10
+                 ]
+                    |> List.append
+                        (if s |> String.startsWith "Indicatie" then
+                            [ onClickPreventDefault ToggleMenu ]
+                         else
+                            []
+                        )
+                )
+                (Element.text s)
+
+        ageDropdown txt min max dropDown =
+            Input.select Style.Select
+                [ Attributes.padding 10 ]
+                { label = labelAbove txt
+                , with = dropDown
+                , max = max + 1
+                , options = []
+                , menu =
+                    Input.menu Style.Select
+                        []
+                        (List.range min max
+                            |> List.map toString
+                            |> List.map (\x -> Input.choice x <| Element.text x)
+                        )
+                }
+
+        yearDropdown =
+            model.yearDropdown |> ageDropdown "Leeftijd (jaren)" 0 17
+
+        monthDropdown =
+            model.monthDropdown |> ageDropdown "Leeftijd (maanden)" 0 11
+
+        printList =
+            model |> printEmergencyList
+
+        labelAbove s =
+            Input.labelAbove <| Element.el Style.Label [ Attributes.alignLeft ] (Element.text s)
+
+        tableCell s i =
+            let
+                style =
+                    if model.hoverRowIndx == i + 1 then
+                        Style.TableRowHover
+                    else
+                        Style.TableRow
+            in
+                Element.el
+                    style
+                    [ Attributes.alignLeft
+                    , Attributes.padding 10
+                    , Events.onMouseEnter (TableRowEnter (i + 1))
+                    , Events.onMouseLeave TableRowLeave
+                    ]
+                    (Element.text s)
+
+        oneColumn r i =
+            let
+                style =
+                    if model.hoverRowIndx == i + 1 then
+                        Style.TableRowHover
+                    else
+                        Style.TableRow
+            in
+                Element.column
+                    style
+                    [ Attributes.alignLeft
+                    , Attributes.padding 10
+                    , Events.onMouseEnter (TableRowEnter (i + 1))
+                    , Events.onMouseLeave TableRowLeave
+                    ]
+                    [ Element.text r.indication
+                    , Element.text r.intervention
+                    , Element.text r.value
+                    , if r.preparation == "" then
+                        Element.empty
+                      else
+                        Element.text r.preparation
+                    , if r.solution == "" then
+                        Element.empty
+                      else
+                        Element.text r.solution
+                    , Element.text r.advice
+                    ]
+
+        tableMenu s =
+            let
+                items =
+                    model.all :: model.indications
+
+                map item =
+                    let
+                        style =
+                            if List.isEmpty model.selections && item == model.all then
+                                Style.MenuItemSelected
+                            else if model.selections |> List.any ((==) item) then
+                                Style.MenuItemSelected
+                            else
+                                Style.MenuItem
+                    in
+                        Element.el style [ Attributes.padding 15, onClickPreventDefault (SelectMenuItem item) ] <| Element.text item
+            in
+                case model.menuState of
+                    MenuClosed ->
+                        s
+                            ++ " ▼"
+                            |> tableHead
+
+                    MenuOpen ->
+                        s
+                            ++ " ▲"
+                            |> tableHead
+                            |> Element.below
+                                [ Element.column Style.MenuContents
+                                    [ Attributes.padding 10
+                                    , Attributes.spacing 10
+                                    , Events.onMouseLeave ToggleMenu
+                                    ]
+                                    (items
+                                        |> List.map map
+                                    )
+                                ]
+
+        table =
+            let
+                columns =
+                    if device.phone then
+                        [ tableHead "Berekend" :: List.mapi oneColumn printList ]
+                    else
+                        [ tableMenu "Indicatie" :: List.mapi (tableCell << .indication) printList
+                        , tableHead "Interventie" :: List.mapi (tableCell << .intervention) printList
+                        , tableHead "Berekend" :: List.mapi (tableCell << .value) printList
+                        , tableHead "Bereiding" :: List.mapi (tableCell << .preparation) printList
+                        , tableHead "Advies" :: List.mapi (tableCell << .advice) printList
+                        ]
+            in
+                Element.table Style.Main
+                    []
+                    columns
+
+        input =
+            if device.phone then
+                Element.column Style.None
+                    [ Attributes.paddingTop 20
+                    , Attributes.paddingBottom 20
+                    , Attributes.paddingLeft 10
+                    , Attributes.paddingRight 10
+                    , Attributes.spacing 50
+                    , Attributes.alignRight
+                    , Attributes.alignBottom
+                    ]
+                    [ yearDropdown
+                    , monthDropdown
+                    , Input.text Style.Input
+                        []
+                        { onChange = UpdateWeight
+                        , value = model.interventions.weightText
+                        , label = labelAbove "Gewicht (kg)"
+                        , options = [ Input.textKey <| toString model.counter ]
+                        }
+                    , Element.button Style.Button [ Events.onClick Clear, Attributes.padding 10 ] (Element.text "VERWIJDER")
+                    ]
+            else
+                Element.row Style.None
+                    [ Attributes.paddingTop 20
+                    , Attributes.paddingBottom 20
+                    , Attributes.spacing 50
+                    , Attributes.alignRight
+                    , Attributes.alignBottom
+                    ]
+                    [ yearDropdown
+                    , monthDropdown
+                    , Input.text Style.Input
+                        []
+                        { onChange = UpdateWeight
+                        , value = model.interventions.weightText
+                        , label = labelAbove "Gewicht (kg)"
+                        , options = [ Input.textKey <| toString model.counter ]
+                        }
+                    , Element.button Style.Button [ Events.onClick Clear, Attributes.padding 10 ] (Element.text "VERWIJDER")
+                    ]
+    in
+        Element.column Style.Main
+            [ Attributes.height Attributes.fill
+            , if device.phone then
+                Attributes.yScrollbar
+              else
+                Attributes.height Attributes.fill
+            ]
+            [ input
+            , Element.paragraph Style.Title
+                [ Attributes.paddingBottom 10
+                ]
+                [ Element.text tableTitle ]
+            , Element.column Style.None
+                [ Attributes.paddingBottom 50
+                , Attributes.height Attributes.fill
+                , Attributes.width Attributes.fill
+                , if device.phone then
+                    Attributes.paddingBottom 50
+                  else
+                    Attributes.yScrollbar
+                ]
+                [ table ]
+            ]

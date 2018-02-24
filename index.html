@@ -2,22 +2,23 @@
 <html>
 
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" name="viewport" content="initial-scale=1.0">
     <title>GenAPLS</title>
     <script src="main.js"></script>
 </head>
 <body>
 
 <script type="text/javascript">
+
      // Elm.Main.fullscreen();
 
     // Uncomment this line and comment out the above to disable elm-reactor support.
     var app = Elm.Main.fullscreen({
-        width : window.innerWidth,
-        height : window.innerHeight,
+        size : { width : window.innerWidth, height : window.innerHeight },
         userAgent : navigator.userAgent,
         supportsGrid : (window.CSS && CSS.supports("display", "grid") || false)
     });
+
 </script>
 </body>
 

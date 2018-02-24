@@ -1,7 +1,5 @@
 module Util.ListUtils exposing (..)
 
-import Util.Utils exposing (eqs)
-
 
 findNearestMax : Float -> List Float -> Float
 findNearestMax n ns =
@@ -28,7 +26,7 @@ removeDuplicates xs =
     xs
         |> List.foldl
             (\x xs ->
-                if xs |> List.any (eqs x) then
+                if xs |> List.any ((==) x) then
                     xs
                 else
                     [ x ] |> List.append xs
@@ -48,3 +46,22 @@ mapi f xs =
                     f head i :: (map_ |> mapi_ (i + 1) tail)
     in
         mapi_ 0 xs []
+
+
+transpose : List (List a) -> List (List a)
+transpose xs =
+    let
+        trans_ xs rest row acc =
+            case xs of
+            [] ->
+                trans_ rest [] [] (acc ++ [row])
+
+            h :: t ->
+                case h of
+                [] ->
+                    acc ++ [ row ]
+                h_ :: t_ ->
+                    trans_ t (rest ++ [t_]) (row ++ [h_]) acc
+
+    in
+        trans_ xs [] [] []
