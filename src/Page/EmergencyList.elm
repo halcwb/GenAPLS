@@ -119,20 +119,45 @@ printEmergencyList model =
         printTubeLengthNasal =
             Intervention.printTubeLengthNasal
 
-        printEpinephrineIV =
+        printEpinephrineIVFst =
             Intervention.printEpinephrineIV
+                >> Tuple.first
 
-        printEpinephrineTR =
+        printEpinephrineIVSnd =
+            Intervention.printEpinephrineIV
+                >> Tuple.second
+
+        printEpinephrineTrFst =
             Intervention.printEpinephrineTR
+                >> Tuple.first
 
-        printFluidBolus =
+        printEpinephrineTrSnd =
+            Intervention.printEpinephrineTR
+                >> Tuple.second
+
+        printFluidBolusFst =
             Intervention.printFluidBolus
+                >> Tuple.first
 
-        printDefibrillation =
+        printFluidBolusSnd =
+            Intervention.printFluidBolus
+                >> Tuple.second
+
+        printDefibrillationFst =
             Intervention.printDefibrillation
+                >> Tuple.first
 
-        printCardioversion =
+        printDefibrillationSnd =
+            Intervention.printDefibrillation
+                >> Tuple.second
+
+        printCardioversionFst =
             Intervention.printCardioversion
+                >> Tuple.first
+
+        printCardioversionSnd =
+            Intervention.printCardioversion
+                >> Tuple.second
 
         intervs =
             model.interventions
@@ -145,29 +170,33 @@ printEmergencyList model =
                         |> fixPrecision 1
 
                 dose m =
-                    (m |> Medication.printDoseVolume >> Tuple.first)
+                    ((m |> Medication.printDoseVolume >> Tuple.first)
                         ++ " ("
                         ++ dosePerKg m
                         ++ " "
                         ++ m.unit
                         ++ "/kg)"
+                    )
 
                 volume m =
-                    m |> Medication.printDoseVolume >> Tuple.second
+                    m
+                        |> Medication.printDoseVolume
+                        |> Tuple.second
 
                 advice m =
-                    m |> Medication.printAdvice
+                    m
+                        |> Medication.printAdvice
             in
                 List.map (\m -> Intervention m.category m.name (m |> dose) (m |> volume) "" (m |> advice)) intervs.medications
     in
         ([ Intervention "reanimatie" "tube maat" (printTubeSize intervs) "" "" "4 + Leeftijd / 4"
          , Intervention "reanimatie" "tube lengte oraal" (printTubeLengthOral intervs) "" "" "12 + Leeftijd / 2"
          , Intervention "reanimatie" "tube lengte nasaal" (printTubeLengthNasal intervs) "" "" "15 + Leeftijd / 2"
-         , Intervention "reanimatie" "epinephrine iv/io" (intervs |> printEpinephrineIV >> Tuple.first) (intervs |> printEpinephrineIV >> Tuple.second) "" "0,01 mg/kg iv"
-         , Intervention "reanimatie" "epinephrine tracheaal" (intervs |> printEpinephrineTR >> Tuple.first) (intervs |> printEpinephrineTR >> Tuple.second) "" "0,1 mg/kg trach"
-         , Intervention "reanimatie" "vaat vulling" (intervs |> printFluidBolus >> Tuple.first) (intervs |> printFluidBolus >> Tuple.second) "" "20 ml/kg"
-         , Intervention "reanimatie" "defibrillatie" (intervs |> printDefibrillation >> Tuple.first) (intervs |> printDefibrillation >> Tuple.second) "" "4 Joule/kg"
-         , Intervention "reanimatie" "cardioversie" (intervs |> printCardioversion |> Tuple.first) (intervs |> printCardioversion >> Tuple.second) "" "2 Joule/kg"
+         , Intervention "reanimatie" "epinephrine iv/io" (intervs |> printEpinephrineIVFst) (intervs |> printEpinephrineIVSnd) "" "0,01 mg/kg iv"
+         , Intervention "reanimatie" "epinephrine tracheaal" (intervs |> printEpinephrineTrFst) (intervs |> printEpinephrineTrSnd) "" "0,1 mg/kg trach"
+         , Intervention "reanimatie" "vaat vulling" (intervs |> printFluidBolusFst) (intervs |> printFluidBolusSnd) "" "20 ml/kg"
+         , Intervention "reanimatie" "defibrillatie" (intervs |> printDefibrillationFst) (intervs |> printDefibrillationSnd) "" "4 Joule/kg"
+         , Intervention "reanimatie" "cardioversie" (intervs |> printCardioversionFst) (intervs |> printCardioversionSnd) "" "2 Joule/kg"
          ]
             ++ meds
         )
@@ -357,11 +386,18 @@ body model device =
                 , max = max + 1
                 , options = []
                 , menu =
-                    Input.menu Style.Select
+                    Input.menu Style.MenuContents
                         []
                         (List.range min max
                             |> List.map toString
-                            |> List.map (\x -> Input.choice x <| Element.text x)
+                            |> List.map
+                                (\x ->
+                                    Input.choice x <|
+                                        Element.el Style.MenuItem
+                                            []
+                                        <|
+                                            Element.text x
+                                )
                         )
                 }
 
@@ -409,18 +445,22 @@ body model device =
                     , Events.onMouseEnter (TableRowEnter (i + 1))
                     , Events.onMouseLeave TableRowLeave
                     ]
-                    [ Element.text r.indication
-                    , Element.text r.intervention
-                    , Element.text r.value
+                    [ Element.underline r.indication
+                    , Element.bold <|
+                        r.intervention
+                            ++ " "
+                            ++ r.value
                     , if r.preparation == "" then
                         Element.empty
                       else
-                        Element.text r.preparation
+                        Element.paragraph Style.None
+                            [ Attributes.maxWidth <| Attributes.px 300 ]
+                            [ Element.text <| "bereiding: " ++ r.preparation ]
                     , if r.solution == "" then
                         Element.empty
                       else
                         Element.text r.solution
-                    , Element.text r.advice
+                    , Element.italic <| "advies: " ++ r.advice
                     ]
 
         tableMenu s =
@@ -438,7 +478,7 @@ body model device =
                             else
                                 Style.MenuItem
                     in
-                        Element.el style [ Attributes.padding 15, onClickPreventDefault (SelectMenuItem item) ] <| Element.text item
+                        Element.el style [ Attributes.padding 10, onClickPreventDefault (SelectMenuItem item) ] <| Element.text item
             in
                 case model.menuState of
                     MenuClosed ->
@@ -464,33 +504,33 @@ body model device =
         table =
             let
                 columns =
-                    if device.phone then
-                        [ tableHead "Berekend" :: List.mapi oneColumn printList ]
-                    else
-                        [ tableMenu "Indicatie" :: List.mapi (tableCell << .indication) printList
-                        , tableHead "Interventie" :: List.mapi (tableCell << .intervention) printList
-                        , tableHead "Berekend" :: List.mapi (tableCell << .value) printList
-                        , tableHead "Bereiding" :: List.mapi (tableCell << .preparation) printList
-                        , tableHead "Advies" :: List.mapi (tableCell << .advice) printList
-                        ]
+                    [ tableMenu "Indicatie" :: List.mapi (tableCell << .indication) printList
+                    , tableHead "Interventie" :: List.mapi (tableCell << .intervention) printList
+                    , tableHead "Berekend" :: List.mapi (tableCell << .value) printList
+                    , tableHead "Bereiding" :: List.mapi (tableCell << .preparation) printList
+                    , tableHead "Advies" :: List.mapi (tableCell << .advice) printList
+                    ]
             in
-                Element.table Style.Main
-                    []
-                    columns
+                if device.phone then
+                    Element.column Style.None [] <| tableHead "Berekend" :: List.mapi oneColumn printList
+                else
+                    Element.table Style.Main
+                        []
+                        columns
 
         input =
             if device.phone then
                 Element.column Style.None
                     [ Attributes.paddingTop 20
                     , Attributes.paddingBottom 20
-                    , Attributes.paddingLeft 10
-                    , Attributes.paddingRight 10
-                    , Attributes.spacing 50
-                    , Attributes.alignRight
+                    , Attributes.spacing 20
                     , Attributes.alignBottom
                     ]
-                    [ yearDropdown
-                    , monthDropdown
+                    [ Element.row Style.None
+                        []
+                        [ yearDropdown
+                        , monthDropdown
+                        ]
                     , Input.text Style.Input
                         []
                         { onChange = UpdateWeight
@@ -498,7 +538,11 @@ body model device =
                         , label = labelAbove "Gewicht (kg)"
                         , options = [ Input.textKey <| toString model.counter ]
                         }
-                    , Element.button Style.Button [ Events.onClick Clear, Attributes.padding 10 ] (Element.text "VERWIJDER")
+                    , Element.button Style.Button
+                        [ Events.onClick Clear
+                        , Attributes.padding 10
+                        ]
+                        (Element.text "VERWIJDER")
                     ]
             else
                 Element.row Style.None
@@ -517,11 +561,16 @@ body model device =
                         , label = labelAbove "Gewicht (kg)"
                         , options = [ Input.textKey <| toString model.counter ]
                         }
-                    , Element.button Style.Button [ Events.onClick Clear, Attributes.padding 10 ] (Element.text "VERWIJDER")
+                    , Element.button Style.Button
+                        [ Events.onClick Clear
+                        , Attributes.padding 10
+                        ]
+                        (Element.text "VERWIJDER")
                     ]
     in
         Element.column Style.Main
             [ Attributes.height Attributes.fill
+            , Attributes.width Attributes.fill
             , if device.phone then
                 Attributes.yScrollbar
               else
@@ -529,8 +578,7 @@ body model device =
             ]
             [ input
             , Element.paragraph Style.Title
-                [ Attributes.paddingBottom 10
-                ]
+                (addPaddingTopBottom10 [])
                 [ Element.text tableTitle ]
             , Element.column Style.None
                 [ Attributes.paddingBottom 50
@@ -542,4 +590,19 @@ body model device =
                     Attributes.yScrollbar
                 ]
                 [ table ]
+            ]
+
+
+
+-- Helper functions
+
+
+addPaddingTopBottom10 :
+    List (Element.Attribute variation msg)
+    -> List (Element.Attribute variation msg)
+addPaddingTopBottom10 attrs =
+    attrs
+        |> List.append
+            [ Attributes.paddingTop 10
+            , Attributes.paddingBottom 10
             ]

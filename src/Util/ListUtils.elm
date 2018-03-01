@@ -82,7 +82,6 @@ transpose xs =
                                 else
                                     acc
 
-                            --++ [ row ]
                             h_ :: t_ ->
                                 trans_ t (rest ++ [ t_ ]) (row ++ [ h_ ]) acc
         in

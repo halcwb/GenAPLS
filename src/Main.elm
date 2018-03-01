@@ -1,22 +1,13 @@
 module Main exposing (..)
 
--- Style
-
 import GenStyle as Style
-
-
--- HTML
-
 import Html exposing (Html)
 import Navigation
 import Element as Element
 import Element.Attributes as Attributes
 import Window
-
-
--- Modules
-
 import Page.EmergencyList as EmergencyList exposing (..)
+import Util.ElementUtils as Padding
 
 
 -- Model
@@ -28,15 +19,15 @@ type alias Model =
     }
 
 
-
--- Program
-
-
 type alias Device =
     { size : Window.Size
     , userAgent : String
     , supportsGrid : Bool
     }
+
+
+
+-- Program
 
 
 init : Device -> Navigation.Location -> ( Model, Cmd msg )
@@ -85,11 +76,20 @@ update msg model =
             in
                 ( { model | emergencyList = elist }, Cmd.none )
 
+        -- EmergencyList Message
+        --
         EListMsg msg ->
-            ( { model | emergencyList = model.emergencyList |> EmergencyList.update msg |> Tuple.first }
+            ( { model
+                | emergencyList =
+                    model.emergencyList
+                        |> EmergencyList.update msg
+                        |> Tuple.first
+              }
             , Cmd.none
             )
 
+        -- Device Message
+        --
         Resize size ->
             let
                 device =
@@ -99,7 +99,6 @@ update msg model =
 
 
 
--- View
 -- Navbar
 
 
@@ -109,7 +108,9 @@ navBar model =
         title =
             "Pediatrische Noodlijst Berekeningen"
     in
-        Element.header Style.Header [ Attributes.padding 30 ] (Element.text title)
+        Element.header Style.Header
+            [ responsivePadding model ]
+            (Element.text title)
 
 
 
@@ -119,18 +120,26 @@ navBar model =
 footer : Model -> Element.Element Style.Styles variation msg
 footer model =
     Element.footer Style.Footer
-        [ Attributes.paddingLeft 50
+        [ responsivePaddingLeft model
         , Attributes.paddingTop 10
         , Attributes.paddingBottom 10
         ]
         (Element.row Style.None
-            [ Attributes.padding 15
+            [ Attributes.paddingTop 10
+            , Attributes.paddingBottom 10
             , Attributes.spacing 20
             ]
-            [ Element.link "http://github.com/halcwb/GenAPLS.git" <| Element.text "GenAPLS Informedica 2008"
-            , Element.link "https://www.eenheidintensievezorg.nl" <| Element.text "Eenheid Intensieve Zorg"
-            , Element.link "https://www.kinderformularium.nl" <| Element.text "Kinderformularium"
-            , Element.text <| "Browser size: " ++ (toString model.device.size.width) ++ " x " ++ (toString model.device.size.height)
+            [ Element.link "http://github.com/halcwb/GenAPLS.git" <|
+                Element.text "GenAPLS Informedica 2008"
+            , Element.link "https://www.eenheidintensievezorg.nl" <|
+                Element.text "Eenheid Intensieve Zorg"
+            , Element.link "https://www.kinderformularium.nl" <|
+                Element.text "Kinderformularium"
+            , Element.text <|
+                "Browser size: "
+                    ++ (toString model.device.size.width)
+                    ++ " x "
+                    ++ (toString model.device.size.height)
             ]
         )
 
@@ -145,8 +154,8 @@ body model =
         Style.None
         [ Attributes.center
         , Attributes.height Attributes.fill
-        , Attributes.paddingLeft 20
-        , Attributes.paddingRight 20
+        , responsivePaddingLeft model
+        , responsivePaddingRight model
         ]
         [ model.device.size
             |> Element.classifyDevice
@@ -159,26 +168,37 @@ body model =
 -- View
 
 
+notSupported : Element.Element style variation msg
+notSupported =
+    Element.text "Oops kan met deze browser de inhoud niet weergeven"
+
+
 view : Model -> Html Msg
 view model =
-    if model.device.supportsGrid then
-        Element.viewport Style.stylesheet <|
-            Element.column Style.Main
-                [ Attributes.height Attributes.fill
-                , Attributes.width Attributes.fill
-                ]
-                [ navBar model
-                , body model
-                , footer model
-                ]
-    else
-        Element.viewport Style.stylesheet <|
-            Element.column Style.Main
-                [ Attributes.height Attributes.fill ]
-                [ navBar model
-                , Element.el Style.None [ Attributes.height Attributes.fill ] <| Element.text "Oops kan met deze browser de inhoud niet weergeven"
-                , footer model
-                ]
+    let
+        stylesheet =
+            Style.stylesheet model.device.size
+    in
+        if model.device.supportsGrid then
+            Element.viewport stylesheet <|
+                Element.column Style.Main
+                    [ Attributes.height Attributes.fill
+                    ]
+                    [ navBar model
+                    , body model
+                    , footer model
+                    ]
+        else
+            Element.viewport stylesheet <|
+                Element.column Style.Main
+                    [ Attributes.height Attributes.fill
+                    ]
+                    [ navBar model
+                    , Element.el Style.None
+                        [ Attributes.height Attributes.fill ]
+                        notSupported
+                    , footer model
+                    ]
 
 
 
@@ -188,3 +208,28 @@ view model =
 subscriptions : Model -> Sub Msg
 subscriptions _ =
     Window.resizes Resize
+
+
+
+-- Helper Functions
+
+
+responsivePadding :
+    { c | device : { b | size : { a | width : Int } } }
+    -> Element.Attribute variation msg
+responsivePadding model =
+    Padding.responsivePadding Padding.All (toFloat model.device.size.width) 10 100
+
+
+responsivePaddingLeft :
+    { c | device : { b | size : { a | width : Int } } }
+    -> Element.Attribute variation msg
+responsivePaddingLeft model =
+    Padding.responsivePadding Padding.Left (toFloat model.device.size.width) 10 100
+
+
+responsivePaddingRight :
+    { c | device : { b | size : { a | width : Int } } }
+    -> Element.Attribute variation msg
+responsivePaddingRight model =
+    Padding.responsivePadding Padding.Right (toFloat model.device.size.width) 10 100
