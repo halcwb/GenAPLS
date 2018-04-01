@@ -346,7 +346,7 @@ update msg model =
                     model_ =
                         model |> updateModel s
                 in
-                    ( model_, Cmd.none )
+                    ( { model_ | menuState = MenuClosed }, Cmd.none )
 
 
 
