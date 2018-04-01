@@ -371,7 +371,9 @@ body model device =
                  ]
                     |> List.append
                         (if s |> String.startsWith "Indicatie" then
-                            [ onClickPreventDefault ToggleMenu ]
+                            [ onClickPreventDefault ToggleMenu
+                            , Attributes.minWidth <| Attributes.px 200
+                            ]
                          else
                             []
                         )
@@ -531,13 +533,17 @@ body model device =
                         [ yearDropdown
                         , monthDropdown
                         ]
-                    , Input.text Style.Input
-                        []
-                        { onChange = UpdateWeight
-                        , value = model.interventions.weightText
-                        , label = labelAbove "Gewicht (kg)"
-                        , options = [ Input.textKey <| toString model.counter ]
-                        }
+                    , Element.row Style.None
+                        [ Attributes.spacing 20 ]
+                        [ Input.text Style.Input
+                            [ Attributes.maxWidth <| Attributes.px 200 ]
+                            { onChange = UpdateWeight
+                            , value = model.interventions.weightText
+                            , label = labelAbove "Gewicht (kg)"
+                            , options = [ Input.textKey <| toString model.counter ]
+                            }
+                        , tableMenu "Indicatie"
+                        ]
                     , Element.button Style.Button
                         [ Events.onClick Clear
                         , Attributes.padding 10

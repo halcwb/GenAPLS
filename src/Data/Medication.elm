@@ -126,6 +126,11 @@ printAdvice med =
                 else
                     ""
                )
+            ++ (if med.remark /= "" then
+                    " " ++ med.remark
+                else
+                    ""
+               )
 
 
 print : Bolus -> String
@@ -150,6 +155,10 @@ calculate kg med =
         }
 
 
+
+-- indication, intervention, dosePerKg, min, max, conc, unit, advice
+
+
 medicationDefs : List ( String, String, Float, Float, Float, Float, String, String )
 medicationDefs =
     [ ( "reanimatie", "glucose 10%", 0.2, 0, 25, 0.1, "gram", "" )
@@ -168,6 +177,9 @@ medicationDefs =
     , ( "elektrolyten", "kaliumchloride 7,4%", 0.5, 0, 40, 1.0, "mmol", "" )
     , ( "elektrolyten", "calciumgluconaat", 0.13, 0, 4.5, 0.225, "mmol", "" )
     , ( "elektrolyten", "magnesiumchloride 10%", 0.08, 0, 0, 0.5, "mmol", "" )
+    , ( "antiarrythmica", "adenosine 1e gift", 100, 0, 12000, 3000, "microg", "" )
+    , ( "antiarrythmica", "adenosine 2e gift", 200, 0, 12000, 3000, "microg", "" )
+    , ( "antiarrythmica", "adenosine 3e gift", 300, 0, 12000, 3000, "microg", "" )
     , ( "antiarrythmica", "amiodarone", 5, 0, 300, 50, "mg", "" )
     , ( "anticonvulsiva", "diazepam", 0.5, 0, 10, 2, "mg", "" )
     , ( "anticonvulsiva", "fenytoine", 20, 0, 1500, 50, "mg", "" )
