@@ -27628,13 +27628,6 @@ var _halcwb$genapls$Page_EmergencyList$newModel = function () {
 		counter: 0
 	};
 }();
-var _halcwb$genapls$Page_EmergencyList$init = function (location) {
-	return _elm_lang$core$Native_Utils.update(
-		_halcwb$genapls$Page_EmergencyList$newModel,
-		{
-			interventions: _halcwb$genapls$Data_Intervention$init(location.search)
-		});
-};
 var _halcwb$genapls$Page_EmergencyList$update = F2(
 	function (msg, model) {
 		var updateAge = F3(
@@ -27739,6 +27732,24 @@ var _halcwb$genapls$Page_EmergencyList$update = F2(
 				};
 		}
 	});
+var _halcwb$genapls$Page_EmergencyList$init = function (location) {
+	var intervs = _halcwb$genapls$Data_Intervention$init(location.search);
+	return _elm_lang$core$Native_Utils.update(
+		_halcwb$genapls$Page_EmergencyList$newModel,
+		{
+			interventions: intervs,
+			yearDropdown: _elm_lang$core$Native_Utils.eq(intervs.year, 0) ? _halcwb$genapls$Page_EmergencyList$newModel.yearDropdown : A2(
+				_mdgriffith$style_elements$Element_Input$dropMenu,
+				_elm_lang$core$Maybe$Just(
+					_elm_lang$core$Basics$toString(intervs.year)),
+				_halcwb$genapls$Page_EmergencyList$UpdateYear),
+			monthDropdown: _elm_lang$core$Native_Utils.eq(intervs.month, 0) ? _halcwb$genapls$Page_EmergencyList$newModel.monthDropdown : A2(
+				_mdgriffith$style_elements$Element_Input$dropMenu,
+				_elm_lang$core$Maybe$Just(
+					_elm_lang$core$Basics$toString(intervs.month)),
+				_halcwb$genapls$Page_EmergencyList$UpdateMonth)
+		});
+};
 
 var _halcwb$genapls$Util_ElementUtils$responsivePadding = F4(
 	function (pt, w, min, max) {

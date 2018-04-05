@@ -90,7 +90,23 @@ newModel =
 
 init : Navigation.Location -> Model
 init location =
-    { newModel | interventions = Intervention.init location.search }
+    let
+        intervs =
+            Intervention.init location.search
+    in
+        { newModel
+            | interventions = intervs
+            , yearDropdown =
+                if intervs.year == 0 then
+                    newModel.yearDropdown
+                else
+                    Input.dropMenu (intervs.year |> toString |> Just) UpdateYear
+            , monthDropdown =
+                if intervs.month == 0 then
+                    newModel.monthDropdown
+                else
+                    Input.dropMenu (intervs.month |> toString |> Just) UpdateMonth
+        }
 
 
 
