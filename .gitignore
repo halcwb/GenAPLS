@@ -27,3 +27,5 @@
 
 # Add the generated files
 !generated/
+!generated/*.js
+
