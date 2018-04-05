@@ -25,3 +25,5 @@
 # Add test files
 !tests/
 
+# Add the generated files
+!generated/
