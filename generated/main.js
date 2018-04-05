@@ -27046,8 +27046,8 @@ var _halcwb$genapls$Page_EmergencyList$Clear = {ctor: 'Clear'};
 var _halcwb$genapls$Page_EmergencyList$UpdateWeight = function (a) {
 	return {ctor: 'UpdateWeight', _0: a};
 };
-var _halcwb$genapls$Page_EmergencyList$body = F2(
-	function (model, device) {
+var _halcwb$genapls$Page_EmergencyList$body = F3(
+	function (supportsGrid, model, device) {
 		var oneColumn = F2(
 			function (r, i) {
 				var style = _elm_lang$core$Native_Utils.eq(model.hoverRowIndx, i + 1) ? _halcwb$genapls$GenStyle$TableRowHover : _halcwb$genapls$GenStyle$TableRow;
@@ -27275,7 +27275,7 @@ var _halcwb$genapls$Page_EmergencyList$body = F2(
 						A2(_elm_lang$core$Basics_ops['++'], s, ' ▲')));
 			}
 		};
-		var input = device.phone ? A3(
+		var input = (device.phone || (!supportsGrid)) ? A3(
 			_mdgriffith$style_elements$Element$column,
 			_halcwb$genapls$GenStyle$None,
 			{
@@ -27515,7 +27515,7 @@ var _halcwb$genapls$Page_EmergencyList$body = F2(
 					}
 				}
 			};
-			return device.phone ? A3(
+			return (device.phone || (!supportsGrid)) ? A3(
 				_mdgriffith$style_elements$Element$column,
 				_halcwb$genapls$GenStyle$None,
 				{ctor: '[]'},
@@ -27547,7 +27547,7 @@ var _halcwb$genapls$Page_EmergencyList$body = F2(
 					_0: _mdgriffith$style_elements$Element_Attributes$width(_mdgriffith$style_elements$Element_Attributes$fill),
 					_1: {
 						ctor: '::',
-						_0: device.phone ? _mdgriffith$style_elements$Element_Attributes$yScrollbar : _mdgriffith$style_elements$Element_Attributes$height(_mdgriffith$style_elements$Element_Attributes$fill),
+						_0: (device.phone || (!supportsGrid)) ? _mdgriffith$style_elements$Element_Attributes$yScrollbar : _mdgriffith$style_elements$Element_Attributes$height(_mdgriffith$style_elements$Element_Attributes$fill),
 						_1: {ctor: '[]'}
 					}
 				}
@@ -27583,7 +27583,7 @@ var _halcwb$genapls$Page_EmergencyList$body = F2(
 										_0: _mdgriffith$style_elements$Element_Attributes$width(_mdgriffith$style_elements$Element_Attributes$fill),
 										_1: {
 											ctor: '::',
-											_0: device.phone ? _mdgriffith$style_elements$Element_Attributes$paddingBottom(50) : _mdgriffith$style_elements$Element_Attributes$yScrollbar,
+											_0: (device.phone || (!supportsGrid)) ? _mdgriffith$style_elements$Element_Attributes$paddingBottom(50) : _mdgriffith$style_elements$Element_Attributes$yScrollbar,
 											_1: {ctor: '[]'}
 										}
 									}
@@ -27936,42 +27936,44 @@ var _halcwb$genapls$Main$subscriptions = function (_p1) {
 var _halcwb$genapls$Main$EListMsg = function (a) {
 	return {ctor: 'EListMsg', _0: a};
 };
-var _halcwb$genapls$Main$body = function (model) {
-	return A3(
-		_mdgriffith$style_elements$Element$column,
-		_halcwb$genapls$GenStyle$None,
-		{
-			ctor: '::',
-			_0: _mdgriffith$style_elements$Element_Attributes$center,
-			_1: {
+var _halcwb$genapls$Main$body = F2(
+	function (supportsGrid, model) {
+		return A3(
+			_mdgriffith$style_elements$Element$column,
+			_halcwb$genapls$GenStyle$None,
+			{
 				ctor: '::',
-				_0: _mdgriffith$style_elements$Element_Attributes$height(_mdgriffith$style_elements$Element_Attributes$fill),
+				_0: _mdgriffith$style_elements$Element_Attributes$center,
 				_1: {
 					ctor: '::',
-					_0: _halcwb$genapls$Main$responsivePaddingLeft(model),
+					_0: _mdgriffith$style_elements$Element_Attributes$height(_mdgriffith$style_elements$Element_Attributes$fill),
 					_1: {
 						ctor: '::',
-						_0: _halcwb$genapls$Main$responsivePaddingRight(model),
-						_1: {ctor: '[]'}
+						_0: _halcwb$genapls$Main$responsivePaddingLeft(model),
+						_1: {
+							ctor: '::',
+							_0: _halcwb$genapls$Main$responsivePaddingRight(model),
+							_1: {ctor: '[]'}
+						}
 					}
 				}
-			}
-		},
-		{
-			ctor: '::',
-			_0: A2(
-				_mdgriffith$style_elements$Element$map,
-				_halcwb$genapls$Main$EListMsg,
-				A2(
-					_halcwb$genapls$Page_EmergencyList$body,
-					model.emergencyList,
-					_mdgriffith$style_elements$Element$classifyDevice(model.device.size))),
-			_1: {ctor: '[]'}
-		});
-};
+			},
+			{
+				ctor: '::',
+				_0: A2(
+					_mdgriffith$style_elements$Element$map,
+					_halcwb$genapls$Main$EListMsg,
+					A3(
+						_halcwb$genapls$Page_EmergencyList$body,
+						supportsGrid,
+						model.emergencyList,
+						_mdgriffith$style_elements$Element$classifyDevice(model.device.size))),
+				_1: {ctor: '[]'}
+			});
+	});
 var _halcwb$genapls$Main$view = function (model) {
 	var stylesheet = _halcwb$genapls$GenStyle$stylesheet(model.device.size);
-	return model.device.supportsGrid ? A2(
+	return A2(
 		_mdgriffith$style_elements$Element$viewport,
 		stylesheet,
 		A3(
@@ -27987,38 +27989,7 @@ var _halcwb$genapls$Main$view = function (model) {
 				_0: _halcwb$genapls$Main$navBar(model),
 				_1: {
 					ctor: '::',
-					_0: _halcwb$genapls$Main$body(model),
-					_1: {
-						ctor: '::',
-						_0: _halcwb$genapls$Main$footer(model),
-						_1: {ctor: '[]'}
-					}
-				}
-			})) : A2(
-		_mdgriffith$style_elements$Element$viewport,
-		stylesheet,
-		A3(
-			_mdgriffith$style_elements$Element$column,
-			_halcwb$genapls$GenStyle$Main,
-			{
-				ctor: '::',
-				_0: _mdgriffith$style_elements$Element_Attributes$height(_mdgriffith$style_elements$Element_Attributes$fill),
-				_1: {ctor: '[]'}
-			},
-			{
-				ctor: '::',
-				_0: _halcwb$genapls$Main$navBar(model),
-				_1: {
-					ctor: '::',
-					_0: A3(
-						_mdgriffith$style_elements$Element$el,
-						_halcwb$genapls$GenStyle$None,
-						{
-							ctor: '::',
-							_0: _mdgriffith$style_elements$Element_Attributes$height(_mdgriffith$style_elements$Element_Attributes$fill),
-							_1: {ctor: '[]'}
-						},
-						_halcwb$genapls$Main$notSupported),
+					_0: A2(_halcwb$genapls$Main$body, model.device.supportsGrid, model),
 					_1: {
 						ctor: '::',
 						_0: _halcwb$genapls$Main$footer(model),

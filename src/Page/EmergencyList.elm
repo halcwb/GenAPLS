@@ -353,8 +353,8 @@ update msg model =
 -- View
 
 
-body : Model -> Element.Device -> Element.Element Style.Styles variation Msg
-body model device =
+body : Bool -> Model -> Element.Device -> Element.Element Style.Styles variation Msg
+body supportsGrid model device =
     let
         tableTitle =
             if model.interventions.weight > 0 then
@@ -513,7 +513,7 @@ body model device =
                     , tableHead "Advies" :: List.mapi (tableCell << .advice) printList
                     ]
             in
-                if device.phone then
+                if device.phone || not supportsGrid then
                     Element.column Style.None [] <| tableHead "Berekend" :: List.mapi oneColumn printList
                 else
                     Element.table Style.Main
@@ -521,7 +521,7 @@ body model device =
                         columns
 
         input =
-            if device.phone then
+            if device.phone || not supportsGrid then
                 Element.column Style.None
                     [ Attributes.paddingTop 20
                     , Attributes.paddingBottom 20
@@ -577,7 +577,7 @@ body model device =
         Element.column Style.Main
             [ Attributes.height Attributes.fill
             , Attributes.width Attributes.fill
-            , if device.phone then
+            , if device.phone || not supportsGrid then
                 Attributes.yScrollbar
               else
                 Attributes.height Attributes.fill
@@ -590,7 +590,7 @@ body model device =
                 [ Attributes.paddingBottom 50
                 , Attributes.height Attributes.fill
                 , Attributes.width Attributes.fill
-                , if device.phone then
+                , if device.phone || not supportsGrid then
                     Attributes.paddingBottom 50
                   else
                     Attributes.yScrollbar

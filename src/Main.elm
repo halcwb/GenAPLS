@@ -148,8 +148,8 @@ footer model =
 -- Body
 
 
-body : Model -> Element.Element Style.Styles variation Msg
-body model =
+body : Bool -> Model -> Element.Element Style.Styles variation Msg
+body supportsGrid model =
     Element.column
         Style.None
         [ Attributes.center
@@ -159,7 +159,7 @@ body model =
         ]
         [ model.device.size
             |> Element.classifyDevice
-            |> EmergencyList.body model.emergencyList
+            |> EmergencyList.body supportsGrid model.emergencyList
             |> Element.map EListMsg
         ]
 
@@ -179,26 +179,14 @@ view model =
         stylesheet =
             Style.stylesheet model.device.size
     in
-        if model.device.supportsGrid then
-            Element.viewport stylesheet <|
-                Element.column Style.Main
-                    [ Attributes.height Attributes.fill
-                    ]
-                    [ navBar model
-                    , body model
-                    , footer model
-                    ]
-        else
-            Element.viewport stylesheet <|
-                Element.column Style.Main
-                    [ Attributes.height Attributes.fill
-                    ]
-                    [ navBar model
-                    , Element.el Style.None
-                        [ Attributes.height Attributes.fill ]
-                        notSupported
-                    , footer model
-                    ]
+        Element.viewport stylesheet <|
+            Element.column Style.Main
+                [ Attributes.height Attributes.fill
+                ]
+                [ navBar model
+                , body model.device.supportsGrid model
+                , footer model
+                ]
 
 
 
