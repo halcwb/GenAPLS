@@ -97,7 +97,7 @@ init location =
         { newModel
             | interventions = intervs
             , yearDropdown =
-                if intervs.year == 0 then
+                if intervs.year == 0 && intervs.month == 0 then
                     newModel.yearDropdown
                 else
                     Input.dropMenu (intervs.year |> toString |> Just) UpdateYear

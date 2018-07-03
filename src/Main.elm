@@ -131,8 +131,8 @@ footer model =
             ]
             [ Element.link "http://github.com/halcwb/GenAPLS.git" <|
                 Element.text "GenAPLS Informedica 2008"
-            , Element.link "https://www.eenheidintensievezorg.nl" <|
-                Element.text "Eenheid Intensieve Zorg"
+            , Element.link "http://www.picuwkz.nl" <|
+                Element.text "PICU WKZ"
             , Element.link "https://www.kinderformularium.nl" <|
                 Element.text "Kinderformularium"
             , Element.text <|

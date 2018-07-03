@@ -27738,7 +27738,7 @@ var _halcwb$genapls$Page_EmergencyList$init = function (location) {
 		_halcwb$genapls$Page_EmergencyList$newModel,
 		{
 			interventions: intervs,
-			yearDropdown: _elm_lang$core$Native_Utils.eq(intervs.year, 0) ? _halcwb$genapls$Page_EmergencyList$newModel.yearDropdown : A2(
+			yearDropdown: (_elm_lang$core$Native_Utils.eq(intervs.year, 0) && _elm_lang$core$Native_Utils.eq(intervs.month, 0)) ? _halcwb$genapls$Page_EmergencyList$newModel.yearDropdown : A2(
 				_mdgriffith$style_elements$Element_Input$dropMenu,
 				_elm_lang$core$Maybe$Just(
 					_elm_lang$core$Basics$toString(intervs.year)),
@@ -27846,8 +27846,8 @@ var _halcwb$genapls$Main$footer = function (model) {
 					ctor: '::',
 					_0: A2(
 						_mdgriffith$style_elements$Element$link,
-						'https://www.eenheidintensievezorg.nl',
-						_mdgriffith$style_elements$Element$text('Eenheid Intensieve Zorg')),
+						'https://www.picuwkz.nl',
+						_mdgriffith$style_elements$Element$text('PICU WKZ')),
 					_1: {
 						ctor: '::',
 						_0: A2(
